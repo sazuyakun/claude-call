@@ -4,6 +4,7 @@ mod detector;
 
 use anyhow::Result;
 use config::Config;
+use detector::wait_for_wake_word;
 
 fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
@@ -24,6 +25,9 @@ fn main() -> Result<()> {
             "loaded action"
         );
     }
+
+    tracing::info!("listening for wake word");
+    wait_for_wake_word(&config.wake_word)?;
 
     Ok(())
 }
