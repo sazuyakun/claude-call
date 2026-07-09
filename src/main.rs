@@ -2,6 +2,7 @@ mod actions;
 mod config;
 mod detector;
 
+use actions::run_actions;
 use anyhow::Result;
 use config::Config;
 use detector::wait_for_wake_word;
@@ -28,6 +29,8 @@ fn main() -> Result<()> {
 
     tracing::info!("listening for wake word");
     wait_for_wake_word(&config.wake_word)?;
+
+    run_actions(&config.actions)?;
 
     Ok(())
 }
