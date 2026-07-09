@@ -4,3 +4,13 @@ wake_word = "claude"
 name = "open-superwhisper"
 command = "osascript"
 args = ["-e", "tell application \"superwhisper\" to activate"]
+
+[[actions]]
+name = "start-superwhisper-recording"
+command = "osascript"
+args = [
+  "-e",
+  "delay 0.2",
+  "-e",
+  "tell application \"System Events\" to key code 49 using option down",
+]
