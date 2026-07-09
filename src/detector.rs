@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 
 pub fn wait_for_wake_word(wake_word: &str) -> Result<()> {
     let normalized_wake_word = normalize_input(wake_word);
@@ -10,9 +10,13 @@ pub fn wait_for_wake_word(wake_word: &str) -> Result<()> {
         io::stdout().flush().context("failed to flush stdout")?;
 
         let mut input = String::new();
-        io::stdin()
+        let bytes_read = io::stdin()
             .read_line(&mut input)
             .context("failed to read from stdin")?;
+
+        if bytes_read == 0 {
+            bail!("stdin closed");
+        }
 
         let normalized_input = normalize_input(&input);
 

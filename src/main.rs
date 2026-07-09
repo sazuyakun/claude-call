@@ -27,10 +27,9 @@ fn main() -> Result<()> {
         );
     }
 
-    tracing::info!("listening for wake word");
-    wait_for_wake_word(&config.wake_word)?;
-
-    run_actions(&config.actions)?;
-
-    Ok(())
+    loop {
+        tracing::info!("listening for wake word");
+        wait_for_wake_word(&config.wake_word)?;
+        run_actions(&config.actions)?;
+    }
 }
