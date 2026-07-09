@@ -2,5 +2,18 @@ wake_word = "claude"
 
 [[actions]]
 name = "start-superwhisper-recording"
-command = "open"
-args = ["superwhisper://record"]
+command = "osascript"
+args = [
+  "-e",
+  "tell application \"System Events\" to set superwhisperIsRunning to exists process \"superwhisper\"",
+  "-e",
+  "if not superwhisperIsRunning then",
+  "-e",
+  "tell application \"superwhisper\" to activate",
+  "-e",
+  "delay 1",
+  "-e",
+  "end if",
+  "-e",
+  "open location \"superwhisper://record\"",
+]
