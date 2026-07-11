@@ -1,6 +1,6 @@
-# Claude Call Project Context
+# Claude Call V0 Context
 
-This file is the handoff document for future AI agents working on this repository. It summarizes the project goal, decisions made in the initial planning chat, V0 implementation status, and the intended direction of the product.
+This file is the V0 handoff document for future AI agents working on this repository. It summarizes the initial planning chat, V0 implementation status, and the product direction that V0 was designed to support.
 
 ## Product Idea
 
@@ -162,7 +162,7 @@ Still worth manually confirming:
 claude-call/
 ├── .gitignore
 ├── .plans/
-│   └── project-context.md
+│   └── v0-context.md
 ├── Cargo.lock
 ├── Cargo.toml
 ├── README.md
@@ -175,7 +175,7 @@ claude-call/
     └── main.rs
 ```
 
-The `.plans` folder should contain only this file unless the user explicitly asks for more files.
+The `.plans` folder currently contains only this V0 context file. Future phases can add new files such as `v1-context.md` when that work begins.
 
 ## Current Runtime Behavior
 
