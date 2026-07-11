@@ -2,6 +2,21 @@
 
 Wake your local AI workflow with a single call.
 
+## Future Scope
+
+The final product is a small local assistant daemon that listens for a wake phrase, starts voice capture, and routes the result into the active AI coding workflow.
+
+The intended experience:
+
+```text
+say "Claude"
+-> Superwhisper starts recording
+-> transcription is sent to the right opencode session
+-> the AI agent continues from your current project context
+```
+
+Long term, Claude Call should feel like a hands-free bridge between your voice, Superwhisper, and local agent sessions.
+
 ## V0
 
 V0 is a terminal-driven prototype. It does not listen to the microphone yet.
