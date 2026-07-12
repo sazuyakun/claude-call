@@ -14,15 +14,18 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum CliCommand {
+    /// Inspect and validate Claude Call configuration.
     Config {
         #[command(subcommand)]
         command: ConfigCommand,
     },
+    /// Run configured actions once without waiting for wake input.
     Trigger,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum ConfigCommand {
+    /// Validate the config file without running actions.
     Check,
 }
 
