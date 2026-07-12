@@ -49,6 +49,7 @@ Instructions for coding agents working in this repository. Treat this as the age
 - Avoid simulated keystrokes when an official URL, local API, or explicit command works.
 - Prefer small focused changes over broad rewrites.
 - Keep README instructions current when behavior changes.
+- Bump `Cargo.toml` version only when cutting a meaningful release or completing a phase, not for every commit.
 
 ## Security And Privacy
 
