@@ -15,6 +15,7 @@ fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
     let config = Config::load_from_file(&cli.config)?;
+    config.validate()?;
 
     tracing::info!(
         config_path = %cli.config.display(),

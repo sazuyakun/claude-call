@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -24,5 +24,29 @@ impl Config {
 
         toml::from_str(&contents)
             .with_context(|| format!("failed to parse config from {}", path.display()))
+    }
+
+    pub fn validate(&self) -> Result<()> {
+        if self.wake_word.trim().is_empty() {
+            bail!("config wake_word must not be empty");
+        }
+
+        if self.actions.is_empty() {
+            bail!("config must define at least one action");
+        }
+
+        for (index, action) in self.actions.iter().enumerate() {
+            let action_number = index + 1;
+
+            if action.name.trim().is_empty() {
+                bail!("config action {action_number} name must not be empty");
+            }
+
+            if action.command.trim().is_empty() {
+                bail!("config action {action_number} command must not be empty");
+            }
+        }
+
+        Ok(())
     }
 }
