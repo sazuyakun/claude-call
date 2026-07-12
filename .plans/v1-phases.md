@@ -64,7 +64,7 @@ Phase 1 commit plan:
 | [x]  | 4    | Add manual trigger mode             | Add a one-shot command or flag that runs the configured actions without waiting for stdin wake input.                                             | `cargo fmt --check`, `cargo check`, `cargo run -- trigger` or chosen command shape            |
 | [x]  | 5    | Add config check command            | Add a command that loads and validates config without running detectors or actions.                                                               | `cargo fmt --check`, `cargo check`, `cargo run -- config check` or chosen command shape       |
 | [x]  | 6    | Refresh README Phase 1 usage        | Document the new CLI usage, config path option, trigger mode, and config check command.                                                           | Read README for accuracy, run listed commands if practical                                    |
-| [ ]  | 7    | Phase 1 final smoke test            | Run the core flows and fix any rough edges before marking Phase 1 complete.                                                                       | `cargo fmt --check`, `cargo check`, `cargo run`, manual trigger command, config check command |
+| [x]  | 7    | Phase 1 final smoke test            | Run the core flows and fix any rough edges before marking Phase 1 complete.                                                                       | `cargo fmt --check`, `cargo check`, `cargo run`, manual trigger command, config check command |
 
 ## Phase 2: State And Cooldown
 
