@@ -36,7 +36,7 @@ type claude
 - Rust toolchain
 - Superwhisper installed
 
-## Run
+## Run Interactive Mode
 
 ```bash
 cargo run
@@ -56,9 +56,41 @@ Superwhisper opens if needed and starts recording.
 
 The app keeps listening after each trigger, so you can type `claude` again to start another recording.
 
+## CLI Usage
+
+Show available commands and options:
+
+```bash
+cargo run -- --help
+```
+
+Use a custom config path:
+
+```bash
+cargo run -- --config config/claude-call.toml
+```
+
+Run the configured actions once without waiting for stdin wake input:
+
+```bash
+cargo run -- trigger
+```
+
+Validate the config without listening or running actions:
+
+```bash
+cargo run -- config check
+```
+
+Validate a custom config file:
+
+```bash
+cargo run -- --config path/to/claude-call.toml config check
+```
+
 ## Config
 
-V0 config lives at:
+The default config lives at:
 
 ```text
 config/claude-call.toml
@@ -90,6 +122,13 @@ args = [
 
 The action checks whether Superwhisper is already running. If not, it opens the app, waits briefly, then calls Superwhisper's official record deep link.
 
+Config is validated at startup. Claude Call currently requires:
+
+- a non-empty `wake_word`
+- at least one action
+- non-empty action names
+- non-empty action commands
+
 ## Logs
 
 Normal logs:
@@ -113,6 +152,18 @@ cargo fmt --check
 cargo check
 ```
 
+Check config only:
+
+```bash
+cargo run -- config check
+```
+
+Manual trigger test:
+
+```bash
+cargo run -- trigger
+```
+
 Manual V0 test:
 
 ```text
@@ -128,4 +179,6 @@ Manual V0 test:
 
 - V0 uses stdin as the fake wake-word detector.
 - V0 uses Superwhisper's `superwhisper://record` deep link to start recording.
+- `trigger` runs configured actions immediately and exits.
+- `config check` validates config without running actions.
 - Real microphone wake-word detection is intentionally out of scope for V0.
