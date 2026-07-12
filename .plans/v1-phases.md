@@ -59,7 +59,7 @@ Phase 1 commit plan:
 | Done | Step | Commit goal | What changes | Verification |
 | --- | --- | --- | --- | --- |
 | [x] | 1 | Add CLI argument parsing foundation | Add a small CLI layer with `clap`, keep default behavior as the current interactive stdin mode, and avoid changing runtime behavior yet. | `cargo fmt --check`, `cargo check`, `cargo run` |
-| [ ] | 2 | Add configurable config path | Add a `--config <path>` flag and route config loading through it instead of hardcoding `config/claude-call.toml`. | `cargo fmt --check`, `cargo check`, `cargo run -- --config config/claude-call.toml` |
+| [x] | 2 | Add configurable config path | Add a `--config <path>` flag and route config loading through it instead of hardcoding `config/claude-call.toml`. | `cargo fmt --check`, `cargo check`, `cargo run -- --config config/claude-call.toml` |
 | [ ] | 3 | Add config validation | Validate config after loading, starting with required non-empty `wake_word`, at least one action, non-empty action names, and non-empty commands. | `cargo fmt --check`, `cargo check`, temporarily test invalid config errors if useful |
 | [ ] | 4 | Add manual trigger mode | Add a one-shot command or flag that runs the configured actions without waiting for stdin wake input. | `cargo fmt --check`, `cargo check`, `cargo run -- trigger` or chosen command shape |
 | [ ] | 5 | Add config check command | Add a command that loads and validates config without running detectors or actions. | `cargo fmt --check`, `cargo check`, `cargo run -- config check` or chosen command shape |
