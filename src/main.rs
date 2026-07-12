@@ -5,7 +5,7 @@ mod detector;
 
 use actions::run_actions;
 use anyhow::Result;
-use cli::Cli;
+use cli::{Cli, CliCommand};
 use config::Config;
 use detector::wait_for_wake_word;
 
@@ -31,6 +31,12 @@ fn main() -> Result<()> {
             args = ?action.args,
             "loaded action"
         );
+    }
+
+    if matches!(cli.command, Some(CliCommand::Trigger)) {
+        tracing::info!("manual trigger requested");
+        run_actions(&config.actions)?;
+        return Ok(());
     }
 
     loop {
