@@ -14,7 +14,16 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum CliCommand {
+    Config {
+        #[command(subcommand)]
+        command: ConfigCommand,
+    },
     Trigger,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ConfigCommand {
+    Check,
 }
 
 impl Cli {

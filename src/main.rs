@@ -5,7 +5,7 @@ mod detector;
 
 use actions::run_actions;
 use anyhow::Result;
-use cli::{Cli, CliCommand};
+use cli::{Cli, CliCommand, ConfigCommand};
 use config::Config;
 use detector::wait_for_wake_word;
 
@@ -16,6 +16,16 @@ fn main() -> Result<()> {
 
     let config = Config::load_from_file(&cli.config)?;
     config.validate()?;
+
+    if matches!(
+        cli.command,
+        Some(CliCommand::Config {
+            command: ConfigCommand::Check
+        })
+    ) {
+        tracing::info!(config_path = %cli.config.display(), "config ok");
+        return Ok(());
+    }
 
     tracing::info!(
         config_path = %cli.config.display(),
