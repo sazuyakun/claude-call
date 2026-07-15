@@ -1,4 +1,5 @@
 wake_word = "claude"
+cooldown_seconds = 5
 
 [[actions]]
 name = "start-superwhisper-recording"

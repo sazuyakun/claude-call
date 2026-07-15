@@ -33,6 +33,7 @@ fn main() -> Result<()> {
     tracing::info!(
         config_path = %cli.config.display(),
         wake_word = %config.wake_word,
+        cooldown_seconds = config.cooldown_seconds,
         actions = config.actions.len(),
         "loaded config"
     );

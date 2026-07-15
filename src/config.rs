@@ -6,6 +6,8 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub wake_word: String,
+    #[serde(default = "default_cooldown_seconds")]
+    pub cooldown_seconds: u64,
     pub actions: Vec<ActionConfig>,
 }
 
@@ -31,6 +33,10 @@ impl Config {
             bail!("config wake_word must not be empty");
         }
 
+        if self.cooldown_seconds == 0 {
+            bail!("config cooldown_seconds must be greater than 0");
+        }
+
         if self.actions.is_empty() {
             bail!("config must define at least one action");
         }
@@ -49,4 +55,8 @@ impl Config {
 
         Ok(())
     }
+}
+
+fn default_cooldown_seconds() -> u64 {
+    5
 }
