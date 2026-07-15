@@ -94,7 +94,7 @@ Phase 2 commit plan:
 | [x]  | 4    | Enforce cooldown decisions      | Track the last accepted trigger and ignore repeated wake events inside the cooldown window.                                    | `cargo fmt --check`, `cargo check`, repeated stdin trigger smoke test                        |
 | [x]  | 5    | Log accepted and ignored events | Add clear logs explaining when wake events are accepted or ignored and why.                                                    | `cargo fmt --check`, `cargo check`, inspect logs during repeated trigger smoke test          |
 | [x]  | 6    | Update docs for cooldown        | Document cooldown behavior and config in README and keep the phase plan current.                                               | Read README for accuracy, run `cargo run -- config check`                                    |
-| [ ]  | 7    | Phase 2 final smoke test        | Run final checks for default mode, repeated triggers, `trigger`, and `config check`; fix rough edges before completing Phase 2. | `cargo fmt --check`, `cargo check`, repeated trigger, manual trigger, config check commands |
+| [x]  | 7    | Phase 2 final smoke test        | Run final checks for default mode, repeated triggers, `trigger`, and `config check`; fix rough edges before completing Phase 2. | `cargo fmt --check`, `cargo check`, repeated trigger, manual trigger, config check commands |
 
 ## Phase 3: Daemon And CLI Split
 
