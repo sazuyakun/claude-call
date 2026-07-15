@@ -5,6 +5,8 @@ mod detector;
 mod event;
 mod policy;
 
+use std::time::Duration;
+
 use actions::run_actions;
 use anyhow::Result;
 use cli::{Cli, CliCommand, ConfigCommand};
@@ -53,7 +55,7 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    let mut wake_policy = WakePolicy::new();
+    let mut wake_policy = WakePolicy::new(Duration::from_secs(config.cooldown_seconds));
 
     loop {
         tracing::info!("listening for wake word");
@@ -62,6 +64,7 @@ fn main() -> Result<()> {
 
         match wake_policy.decide(&wake_event) {
             WakeDecision::Accept => run_actions(&config.actions)?,
+            WakeDecision::Ignore => {}
         }
     }
 }
