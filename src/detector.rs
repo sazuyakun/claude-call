@@ -2,7 +2,9 @@ use std::io::{self, Write};
 
 use anyhow::{Context, Result, bail};
 
-pub fn wait_for_wake_word(wake_word: &str) -> Result<()> {
+use crate::event::WakeEvent;
+
+pub fn wait_for_wake_word(wake_word: &str) -> Result<WakeEvent> {
     let normalized_wake_word = normalize_input(wake_word);
 
     loop {
@@ -22,7 +24,7 @@ pub fn wait_for_wake_word(wake_word: &str) -> Result<()> {
 
         if normalized_input == normalized_wake_word {
             tracing::info!(wake_word = %wake_word, "wake word detected");
-            return Ok(());
+            return Ok(WakeEvent::new(wake_word));
         }
 
         tracing::debug!(input = %normalized_input, "ignored input");
