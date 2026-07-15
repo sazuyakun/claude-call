@@ -3,12 +3,14 @@ mod cli;
 mod config;
 mod detector;
 mod event;
+mod policy;
 
 use actions::run_actions;
 use anyhow::Result;
 use cli::{Cli, CliCommand, ConfigCommand};
 use config::Config;
 use detector::wait_for_wake_word;
+use policy::{WakeDecision, WakePolicy};
 
 fn main() -> Result<()> {
     let cli = Cli::parse_args();
@@ -50,10 +52,15 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
+    let mut wake_policy = WakePolicy::new();
+
     loop {
         tracing::info!("listening for wake word");
         let wake_event = wait_for_wake_word(&config.wake_word)?;
         tracing::debug!(wake_word = %wake_event.wake_word, "wake event received");
-        run_actions(&config.actions)?;
+
+        match wake_policy.decide(&wake_event) {
+            WakeDecision::Accept => run_actions(&config.actions)?,
+        }
     }
 }
