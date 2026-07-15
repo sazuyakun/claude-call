@@ -6,7 +6,6 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub wake_word: String,
-    #[serde(default = "default_cooldown_seconds")]
     pub cooldown_seconds: u64,
     pub actions: Vec<ActionConfig>,
 }
@@ -55,8 +54,4 @@ impl Config {
 
         Ok(())
     }
-}
-
-fn default_cooldown_seconds() -> u64 {
-    5
 }
