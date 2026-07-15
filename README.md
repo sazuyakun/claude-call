@@ -100,6 +100,7 @@ Current config:
 
 ```toml
 wake_word = "claude"
+cooldown_seconds = 5
 
 [[actions]]
 name = "start-superwhisper-recording"
@@ -122,9 +123,12 @@ args = [
 
 The action checks whether Superwhisper is already running. If not, it opens the app, waits briefly, then calls Superwhisper's official record deep link.
 
+`cooldown_seconds` controls how soon another wake event can run actions after the last accepted wake event. If `cooldown_seconds = 5`, a second `claude` typed immediately after the first one is ignored. After 5 seconds, another `claude` can run actions again.
+
 Config is validated at startup. Claude Call currently requires:
 
 - a non-empty `wake_word`
+- `cooldown_seconds` greater than `0`
 - at least one action
 - non-empty action names
 - non-empty action commands
@@ -172,7 +176,10 @@ Manual V0 test:
 3. Type claude.
 4. Confirm Superwhisper opens and starts recording.
 5. Type claude again.
-6. Confirm it starts recording again without restarting the app.
+6. If you type it inside the cooldown window, confirm the wake event is ignored.
+7. Wait for the cooldown to pass.
+8. Type claude again.
+9. Confirm it starts recording again without restarting the app.
 ```
 
 ## Notes
@@ -181,4 +188,5 @@ Manual V0 test:
 - V0 uses Superwhisper's `superwhisper://record` deep link to start recording.
 - `trigger` runs configured actions immediately and exits.
 - `config check` validates config without running actions.
+- Interactive wake detection uses cooldown state; manual `trigger` bypasses wake detection and cooldown.
 - Real microphone wake-word detection is intentionally out of scope for V0.
