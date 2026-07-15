@@ -5,7 +5,7 @@ use crate::event::WakeEvent;
 #[derive(Debug)]
 pub enum WakeDecision {
     Accept,
-    Ignore,
+    Ignore { reason: &'static str },
 }
 
 #[derive(Debug)]
@@ -27,7 +27,9 @@ impl WakePolicy {
 
         if let Some(last_accepted_at) = self.last_accepted_at {
             if now.duration_since(last_accepted_at) < self.cooldown {
-                return WakeDecision::Ignore;
+                return WakeDecision::Ignore {
+                    reason: "cooldown active",
+                };
             }
         }
 

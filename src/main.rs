@@ -63,8 +63,13 @@ fn main() -> Result<()> {
         tracing::debug!(wake_word = %wake_event.wake_word, "wake event received");
 
         match wake_policy.decide(&wake_event) {
-            WakeDecision::Accept => run_actions(&config.actions)?,
-            WakeDecision::Ignore => {}
+            WakeDecision::Accept => {
+                tracing::info!(wake_word = %wake_event.wake_word, "wake event accepted");
+                run_actions(&config.actions)?;
+            }
+            WakeDecision::Ignore { reason } => {
+                tracing::info!(wake_word = %wake_event.wake_word, reason, "wake event ignored");
+            }
         }
     }
 }
