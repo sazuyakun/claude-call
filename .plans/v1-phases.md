@@ -114,6 +114,17 @@ Exit criteria:
 - Failures are logged with enough context to debug locally.
 - The old foreground development mode still exists if useful.
 
+Local control decision:
+
+- Use a localhost-only HTTP control API for V1 daemon/CLI communication.
+- Bind only to `127.0.0.1`, never `0.0.0.0`.
+- Start with a small fixed control surface: `status` and `trigger`.
+- Keep request/response payloads simple JSON when a body is needed.
+- Prefer clear errors if no daemon is running instead of silently falling back, except where a command explicitly supports direct local execution.
+- Do not add authentication for the first local-only version; revisit before exposing anything beyond loopback or adding sensitive transcript routes.
+- Likely implementation path: Rust HTTP server in daemon mode and Rust HTTP client in CLI mode, using crates such as `axum` and `reqwest` when this step is implemented.
+- Keep action orchestration inside the daemon process so the CLI asks for work rather than duplicating daemon state.
+
 Phase 3 commit plan:
 
 | Done | Step | Commit goal                         | What changes                                                                                                                   | Verification                                                                                  |
@@ -122,7 +133,7 @@ Phase 3 commit plan:
 | [x]  | 2    | Reorganize source modules           | Group app runtime/config/actions and wake detector/event/policy into clearer module folders before adding daemon code.          | `cargo fmt --check`, `cargo check`, `cargo run -- config check`, safe stdin smoke test        |
 | [x]  | 3    | Clarify foreground command          | Add an explicit foreground/run command shape while preserving the current default interactive behavior.                        | `cargo fmt --check`, `cargo check`, `cargo run -- --help`, safe stdin smoke test              |
 | [x]  | 4    | Add daemon command shell            | Add a `daemon` subcommand that runs the same long-running foreground runtime for now, without installing a service yet.         | `cargo fmt --check`, `cargo check`, `cargo run -- daemon` smoke test with safe config         |
-| [ ]  | 5    | Choose local control mechanism      | Document and encode the decision for local control, likely localhost HTTP or local IPC, before implementing daemon control.     | Review `.plans/v1-phases.md`; no runtime behavior change                                      |
+| [x]  | 5    | Choose local control mechanism      | Document and encode the decision for local control, likely localhost HTTP or local IPC, before implementing daemon control.     | Review `.plans/v1-phases.md`; no runtime behavior change                                      |
 | [ ]  | 6    | Add daemon status endpoint/command  | Add the smallest local `status` path so the CLI can ask a running daemon whether it is alive.                                  | `cargo fmt --check`, `cargo check`, run daemon and status command                             |
 | [ ]  | 7    | Add daemon trigger command path     | Route CLI trigger requests to the daemon when available, while preserving direct local trigger behavior for development.        | `cargo fmt --check`, `cargo check`, safe daemon trigger test                                  |
 | [ ]  | 8    | Improve daemon observability        | Ensure startup, config, status, trigger, and shutdown paths log clear useful information without becoming noisy.                | Inspect logs during daemon/status/trigger smoke tests                                         |
