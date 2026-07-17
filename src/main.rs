@@ -1,5 +1,6 @@
 mod app;
 mod cli;
+mod daemon;
 mod wake;
 
 use anyhow::Result;

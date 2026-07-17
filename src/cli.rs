@@ -23,6 +23,8 @@ pub enum CliCommand {
     Daemon,
     /// Run the wake listener in the foreground terminal.
     Foreground,
+    /// Ask the running daemon for its status.
+    Status,
     /// Run configured actions once without waiting for wake input.
     Trigger,
 }

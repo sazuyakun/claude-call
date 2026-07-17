@@ -5,6 +5,7 @@ use anyhow::Result;
 use crate::{
     app::{actions::run_actions, config::Config},
     cli::{CliCommand, ConfigCommand},
+    daemon::control::{request_status, start_status_server},
     wake::{
         detector::wait_for_wake_word,
         policy::{WakeDecision, WakePolicy},
@@ -12,10 +13,14 @@ use crate::{
 };
 
 pub fn run(config_path: &Path, command: Option<CliCommand>) -> Result<()> {
+    if matches!(command.as_ref(), Some(CliCommand::Status)) {
+        return request_status();
+    }
+
     let config = load_config(config_path)?;
 
     if matches!(
-        command,
+        command.as_ref(),
         Some(CliCommand::Config {
             command: ConfigCommand::Check
         })
@@ -26,14 +31,17 @@ pub fn run(config_path: &Path, command: Option<CliCommand>) -> Result<()> {
 
     log_config(config_path, &config);
 
-    if matches!(command, Some(CliCommand::Trigger)) {
+    if matches!(command.as_ref(), Some(CliCommand::Trigger)) {
         tracing::info!("manual trigger requested");
         run_actions(&config.actions)?;
         return Ok(());
     }
 
-    match command {
-        Some(CliCommand::Daemon) => tracing::info!("daemon wake listener requested"),
+    match command.as_ref() {
+        Some(CliCommand::Daemon) => {
+            tracing::info!("daemon wake listener requested");
+            start_status_server()?;
+        }
         Some(CliCommand::Foreground) => tracing::info!("foreground wake listener requested"),
         _ => {}
     }
