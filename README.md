@@ -70,10 +70,48 @@ Use a custom config path:
 cargo run -- --config config/claude-call.toml
 ```
 
-Run the configured actions once without waiting for stdin wake input:
+Run the wake listener in the foreground terminal:
+
+```bash
+cargo run -- foreground
+```
+
+Running without a subcommand currently does the same thing:
+
+```bash
+cargo run
+```
+
+Run daemon mode:
+
+```bash
+cargo run -- daemon
+```
+
+Daemon mode currently runs in the attached terminal. It is not installed as a background service yet, but it starts the local control API on `127.0.0.1:8765`.
+
+Ask a running daemon for status:
+
+```bash
+cargo run -- status
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+Ask the running daemon to trigger the configured actions:
 
 ```bash
 cargo run -- trigger
+```
+
+Run the configured actions directly in the current process without using the daemon:
+
+```bash
+cargo run -- trigger --direct
 ```
 
 Validate the config without listening or running actions:
@@ -147,6 +185,13 @@ Debug logs:
 RUST_LOG=debug cargo run
 ```
 
+Daemon control logs are emitted by the daemon process. Useful events include:
+
+- control server startup
+- status request received
+- trigger request received
+- trigger completed or failed
+
 ## Verify
 
 Run the checks:
@@ -162,9 +207,22 @@ Check config only:
 cargo run -- config check
 ```
 
-Manual trigger test:
+Direct trigger test:
 
 ```bash
+cargo run -- trigger --direct
+```
+
+Daemon status and trigger test:
+
+```bash
+cargo run -- daemon
+```
+
+In another terminal:
+
+```bash
+cargo run -- status
 cargo run -- trigger
 ```
 
@@ -186,7 +244,10 @@ Manual V0 test:
 
 - V0 uses stdin as the fake wake-word detector.
 - V0 uses Superwhisper's `superwhisper://record` deep link to start recording.
-- `trigger` runs configured actions immediately and exits.
+- `daemon` runs the current long-lived wake listener and local control API in the attached terminal.
+- `status` calls the daemon over localhost HTTP.
+- `trigger` asks the daemon to run configured actions.
+- `trigger --direct` runs configured actions immediately in the current process and exits.
 - `config check` validates config without running actions.
-- Interactive wake detection uses cooldown state; manual `trigger` bypasses wake detection and cooldown.
+- Interactive wake detection uses cooldown state; daemon/manual trigger bypasses wake detection and cooldown.
 - Real microphone wake-word detection is intentionally out of scope for V0.
