@@ -65,6 +65,8 @@ pub fn start_control_server(actions: Vec<ActionConfig>) -> Result<()> {
 }
 
 pub fn request_status() -> Result<()> {
+    tracing::debug!(addr = CONTROL_ADDR, "sending daemon status request");
+
     let response = reqwest::blocking::get(format!("http://{CONTROL_ADDR}/status"))
         .with_context(|| format!("failed to connect to daemon at {CONTROL_ADDR}"))?
         .error_for_status()
@@ -72,12 +74,15 @@ pub fn request_status() -> Result<()> {
         .text()
         .context("failed to read status response from daemon")?;
 
+    tracing::debug!("daemon status response received");
     println!("{}", response.trim());
 
     Ok(())
 }
 
 pub fn request_trigger() -> Result<()> {
+    tracing::debug!(addr = CONTROL_ADDR, "sending daemon trigger request");
+
     let response = reqwest::blocking::Client::new()
         .post(format!("http://{CONTROL_ADDR}/trigger"))
         .send()
@@ -87,6 +92,7 @@ pub fn request_trigger() -> Result<()> {
         .text()
         .context("failed to read trigger response from daemon")?;
 
+    tracing::debug!("daemon trigger response received");
     println!("{}", response.trim());
 
     Ok(())
@@ -108,13 +114,22 @@ async fn serve_control(listener: TcpListener, state: ControlState) -> Result<()>
 }
 
 async fn status() -> Json<StatusResponse> {
+    tracing::info!("daemon status request received");
+
     Json(StatusResponse { status: "ok" })
 }
 
 async fn trigger(
     State(state): State<ControlState>,
 ) -> Result<Json<TriggerResponse>, (StatusCode, Json<ErrorResponse>)> {
+    tracing::info!(
+        actions = state.actions.len(),
+        "daemon trigger request received"
+    );
+
     run_actions(&state.actions).map_err(|error| {
+        tracing::warn!(%error, "daemon trigger failed");
+
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ErrorResponse {
@@ -122,6 +137,8 @@ async fn trigger(
             }),
         )
     })?;
+
+    tracing::info!("daemon trigger completed");
 
     Ok(Json(TriggerResponse {
         status: "triggered",

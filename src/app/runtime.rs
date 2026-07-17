@@ -14,6 +14,7 @@ use crate::{
 
 pub fn run(config_path: &Path, command: Option<CliCommand>) -> Result<()> {
     if matches!(command.as_ref(), Some(CliCommand::Status)) {
+        tracing::info!("daemon status requested");
         return request_status();
     }
 
@@ -21,6 +22,7 @@ pub fn run(config_path: &Path, command: Option<CliCommand>) -> Result<()> {
         command.as_ref(),
         Some(CliCommand::Trigger { direct: false })
     ) {
+        tracing::info!("daemon trigger requested");
         return request_trigger();
     }
 
