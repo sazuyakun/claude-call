@@ -32,6 +32,10 @@ pub fn run(config_path: &Path, command: Option<CliCommand>) -> Result<()> {
         return Ok(());
     }
 
+    if matches!(command, Some(CliCommand::Foreground)) {
+        tracing::info!("foreground wake listener requested");
+    }
+
     run_interactive(config)
 }
 
