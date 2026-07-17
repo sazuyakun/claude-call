@@ -114,6 +114,20 @@ Exit criteria:
 - Failures are logged with enough context to debug locally.
 - The old foreground development mode still exists if useful.
 
+Phase 3 commit plan:
+
+| Done | Step | Commit goal                         | What changes                                                                                                                   | Verification                                                                                  |
+| ---- | ---- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| [ ]  | 1    | Extract app runtime                 | Move config loading, action logging, trigger handling, and interactive wake loop out of `main.rs` into reusable runtime code.   | `cargo fmt --check`, `cargo check`, `cargo run -- config check`, safe stdin smoke test        |
+| [ ]  | 2    | Clarify foreground command          | Add an explicit foreground/run command shape while preserving the current default interactive behavior.                        | `cargo fmt --check`, `cargo check`, `cargo run -- --help`, safe stdin smoke test              |
+| [ ]  | 3    | Add daemon command shell            | Add a `daemon` subcommand that runs the same long-running foreground runtime for now, without installing a service yet.         | `cargo fmt --check`, `cargo check`, `cargo run -- daemon` smoke test with safe config         |
+| [ ]  | 4    | Choose local control mechanism      | Document and encode the decision for local control, likely localhost HTTP or local IPC, before implementing daemon control.     | Review `.plans/v1-phases.md`; no runtime behavior change                                      |
+| [ ]  | 5    | Add daemon status endpoint/command  | Add the smallest local `status` path so the CLI can ask a running daemon whether it is alive.                                  | `cargo fmt --check`, `cargo check`, run daemon and status command                             |
+| [ ]  | 6    | Add daemon trigger command path     | Route CLI trigger requests to the daemon when available, while preserving direct local trigger behavior for development.        | `cargo fmt --check`, `cargo check`, safe daemon trigger test                                  |
+| [ ]  | 7    | Improve daemon observability        | Ensure startup, config, status, trigger, and shutdown paths log clear useful information without becoming noisy.                | Inspect logs during daemon/status/trigger smoke tests                                         |
+| [ ]  | 8    | Update README for daemon CLI split  | Document foreground mode, daemon mode, status, trigger behavior, and local-only control assumptions.                           | Read README for accuracy; run documented non-destructive commands                             |
+| [ ]  | 9    | Phase 3 final smoke test            | Run final checks for foreground mode, daemon mode, status, trigger, config check, and cooldown behavior before completing.      | `cargo fmt --check`, `cargo check`, daemon/status/trigger/config check smoke tests            |
+
 ## Phase 4: macOS Launch Setup
 
 Goal: make Claude Call start and run like a normal local assistant.
