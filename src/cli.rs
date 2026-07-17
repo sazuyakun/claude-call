@@ -19,6 +19,8 @@ pub enum CliCommand {
         #[command(subcommand)]
         command: ConfigCommand,
     },
+    /// Run the wake listener as the daemon process.
+    Daemon,
     /// Run the wake listener in the foreground terminal.
     Foreground,
     /// Run configured actions once without waiting for wake input.
