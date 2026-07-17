@@ -1,10 +1,6 @@
-mod actions;
+mod app;
 mod cli;
-mod config;
-mod detector;
-mod event;
-mod policy;
-mod runtime;
+mod wake;
 
 use anyhow::Result;
 use cli::Cli;
@@ -14,5 +10,5 @@ fn main() -> Result<()> {
 
     tracing_subscriber::fmt::init();
 
-    runtime::run(&cli.config, cli.command)
+    app::runtime::run(&cli.config, cli.command)
 }

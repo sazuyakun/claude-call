@@ -2,7 +2,7 @@ use std::process::Command;
 
 use anyhow::{Context, Result, bail};
 
-use crate::config::ActionConfig;
+use super::config::ActionConfig;
 
 pub fn run_actions(actions: &[ActionConfig]) -> Result<()> {
     for action in actions {

@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use crate::event::WakeEvent;
+use super::event::WakeEvent;
 
 #[derive(Debug)]
 pub enum WakeDecision {

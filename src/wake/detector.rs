@@ -2,7 +2,7 @@ use std::io::{self, Write};
 
 use anyhow::{Context, Result, bail};
 
-use crate::event::WakeEvent;
+use super::event::WakeEvent;
 
 pub fn wait_for_wake_word(wake_word: &str) -> Result<WakeEvent> {
     let normalized_wake_word = normalize_input(wake_word);

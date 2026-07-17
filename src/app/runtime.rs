@@ -3,11 +3,12 @@ use std::{path::Path, time::Duration};
 use anyhow::Result;
 
 use crate::{
-    actions::run_actions,
+    app::{actions::run_actions, config::Config},
     cli::{CliCommand, ConfigCommand},
-    config::Config,
-    detector::wait_for_wake_word,
-    policy::{WakeDecision, WakePolicy},
+    wake::{
+        detector::wait_for_wake_word,
+        policy::{WakeDecision, WakePolicy},
+    },
 };
 
 pub fn run(config_path: &Path, command: Option<CliCommand>) -> Result<()> {
