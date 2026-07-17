@@ -25,8 +25,11 @@ pub enum CliCommand {
     Foreground,
     /// Ask the running daemon for its status.
     Status,
-    /// Run configured actions once without waiting for wake input.
-    Trigger,
+    /// Ask the daemon to run actions, or use --direct to run locally.
+    Trigger {
+        #[arg(long)]
+        direct: bool,
+    },
 }
 
 #[derive(Debug, Subcommand)]

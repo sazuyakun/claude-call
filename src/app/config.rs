@@ -10,7 +10,7 @@ pub struct Config {
     pub actions: Vec<ActionConfig>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct ActionConfig {
     pub name: String,
     pub command: String,

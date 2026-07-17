@@ -5,7 +5,7 @@ use anyhow::Result;
 use crate::{
     app::{actions::run_actions, config::Config},
     cli::{CliCommand, ConfigCommand},
-    daemon::control::{request_status, start_status_server},
+    daemon::control::{request_status, request_trigger, start_control_server},
     wake::{
         detector::wait_for_wake_word,
         policy::{WakeDecision, WakePolicy},
@@ -15,6 +15,13 @@ use crate::{
 pub fn run(config_path: &Path, command: Option<CliCommand>) -> Result<()> {
     if matches!(command.as_ref(), Some(CliCommand::Status)) {
         return request_status();
+    }
+
+    if matches!(
+        command.as_ref(),
+        Some(CliCommand::Trigger { direct: false })
+    ) {
+        return request_trigger();
     }
 
     let config = load_config(config_path)?;
@@ -31,8 +38,8 @@ pub fn run(config_path: &Path, command: Option<CliCommand>) -> Result<()> {
 
     log_config(config_path, &config);
 
-    if matches!(command.as_ref(), Some(CliCommand::Trigger)) {
-        tracing::info!("manual trigger requested");
+    if matches!(command.as_ref(), Some(CliCommand::Trigger { direct: true })) {
+        tracing::info!("direct manual trigger requested");
         run_actions(&config.actions)?;
         return Ok(());
     }
@@ -40,7 +47,7 @@ pub fn run(config_path: &Path, command: Option<CliCommand>) -> Result<()> {
     match command.as_ref() {
         Some(CliCommand::Daemon) => {
             tracing::info!("daemon wake listener requested");
-            start_status_server()?;
+            start_control_server(config.actions.clone())?;
         }
         Some(CliCommand::Foreground) => tracing::info!("foreground wake listener requested"),
         _ => {}
