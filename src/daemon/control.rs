@@ -1,31 +1,37 @@
-use std::{
-    io::{Read, Write},
-    net::{TcpListener, TcpStream},
-    thread,
-};
+use std::{net::TcpListener, thread};
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
+use axum::{Json, Router, routing::get};
+use serde::Serialize;
 
 const CONTROL_ADDR: &str = "127.0.0.1:8765";
+
+#[derive(Serialize)]
+struct StatusResponse {
+    status: &'static str,
+}
 
 pub fn start_status_server() -> Result<()> {
     let listener = TcpListener::bind(CONTROL_ADDR)
         .with_context(|| format!("failed to bind daemon control server to {CONTROL_ADDR}"))?;
+    listener
+        .set_nonblocking(true)
+        .context("failed to configure daemon control server socket")?;
 
     thread::spawn(move || {
-        tracing::info!(addr = CONTROL_ADDR, "daemon control server listening");
-
-        for stream in listener.incoming() {
-            match stream {
-                Ok(mut stream) => {
-                    if let Err(error) = handle_connection(&mut stream) {
-                        tracing::warn!(%error, "failed to handle daemon control request");
-                    }
-                }
-                Err(error) => {
-                    tracing::warn!(%error, "failed to accept daemon control connection");
-                }
+        let runtime = match tokio::runtime::Builder::new_current_thread()
+            .enable_io()
+            .build()
+        {
+            Ok(runtime) => runtime,
+            Err(error) => {
+                tracing::error!(%error, "failed to start daemon control runtime");
+                return;
             }
+        };
+
+        if let Err(error) = runtime.block_on(serve_status(listener)) {
+            tracing::error!(%error, "daemon control server stopped");
         }
     });
 
@@ -33,62 +39,30 @@ pub fn start_status_server() -> Result<()> {
 }
 
 pub fn request_status() -> Result<()> {
-    let mut stream = TcpStream::connect(CONTROL_ADDR)
-        .with_context(|| format!("failed to connect to daemon at {CONTROL_ADDR}"))?;
-
-    stream
-        .write_all(b"GET /status HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n")
-        .context("failed to send status request to daemon")?;
-
-    let mut response = String::new();
-    stream
-        .read_to_string(&mut response)
+    let response = reqwest::blocking::get(format!("http://{CONTROL_ADDR}/status"))
+        .with_context(|| format!("failed to connect to daemon at {CONTROL_ADDR}"))?
+        .error_for_status()
+        .context("daemon status request failed")?
+        .text()
         .context("failed to read status response from daemon")?;
 
-    if !response.starts_with("HTTP/1.1 200 OK") {
-        bail!(
-            "daemon status request failed: {}",
-            first_response_line(&response)
-        );
-    }
-
-    println!("{}", response_body(&response).trim());
+    println!("{}", response.trim());
 
     Ok(())
 }
 
-fn handle_connection(stream: &mut TcpStream) -> Result<()> {
-    let mut buffer = [0; 1024];
-    let bytes_read = stream
-        .read(&mut buffer)
-        .context("failed to read daemon control request")?;
+async fn serve_status(listener: TcpListener) -> Result<()> {
+    let listener = tokio::net::TcpListener::from_std(listener)
+        .context("failed to create async daemon control listener")?;
+    let app = Router::new().route("/status", get(status));
 
-    let request = String::from_utf8_lossy(&buffer[..bytes_read]);
+    tracing::info!(addr = CONTROL_ADDR, "daemon control server listening");
 
-    if request.starts_with("GET /status ") {
-        write_response(stream, "200 OK", r#"{"status":"ok"}"#)?;
-    } else {
-        write_response(stream, "404 Not Found", r#"{"error":"not found"}"#)?;
-    }
-
-    Ok(())
+    axum::serve(listener, app)
+        .await
+        .context("daemon control server failed")
 }
 
-fn write_response(stream: &mut TcpStream, status: &str, body: &str) -> Result<()> {
-    let response = format!(
-        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-        body.len()
-    );
-
-    stream
-        .write_all(response.as_bytes())
-        .context("failed to write daemon control response")
-}
-
-fn first_response_line(response: &str) -> &str {
-    response.lines().next().unwrap_or("empty response")
-}
-
-fn response_body(response: &str) -> &str {
-    response.split_once("\r\n\r\n").map_or("", |(_, body)| body)
+async fn status() -> Json<StatusResponse> {
+    Json(StatusResponse { status: "ok" })
 }
