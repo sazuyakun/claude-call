@@ -108,6 +108,24 @@ Ask the running daemon to trigger the configured actions:
 cargo run -- trigger
 ```
 
+Send transcript text to the running daemon:
+
+```bash
+cargo run -- transcript "open the current file and explain the main function"
+```
+
+Expected response:
+
+```json
+{"status":"received"}
+```
+
+Dry-run transcript text locally without using the daemon:
+
+```bash
+cargo run -- transcript --direct "open the current file and explain the main function"
+```
+
 Run the configured actions directly in the current process without using the daemon:
 
 ```bash
@@ -191,6 +209,29 @@ Daemon control logs are emitted by the daemon process. Useful events include:
 - status request received
 - trigger request received
 - trigger completed or failed
+- transcript request received
+
+## Transcription Flow
+
+Phase 5 treats a completed transcription as a local text payload entering Claude Call. Superwhisper is still responsible for recording and transcription; Claude Call receives the finished text through either a CLI dry-run command or the daemon's localhost-only control API.
+
+Current local ingest shape:
+
+```http
+POST http://127.0.0.1:8765/transcript
+Content-Type: application/json
+
+{"text":"open the current file and explain the main function"}
+```
+
+Claude Call validates that transcript text is not empty, logs the normalized payload, and prints it in dry-run mode. Routing to opencode sessions is intentionally left for Phase 6.
+
+Superwhisper assumptions:
+
+- recording still starts through Superwhisper's `superwhisper://record` deep link
+- transcript completion should use an official Superwhisper handoff if available, such as a post-transcription command, webhook, shortcut, or app integration
+- if no official completion hook is available, a small local bridge can call `POST /transcript`
+- simulated keystrokes are intentionally avoided for transcript handoff
 
 ## Verify
 
@@ -224,6 +265,13 @@ In another terminal:
 ```bash
 cargo run -- status
 cargo run -- trigger
+cargo run -- transcript "summarize this project"
+```
+
+Transcript dry-run test:
+
+```bash
+cargo run -- transcript --direct "summarize this project"
 ```
 
 Manual V0 test:
@@ -248,6 +296,9 @@ Manual V0 test:
 - `status` calls the daemon over localhost HTTP.
 - `trigger` asks the daemon to run configured actions.
 - `trigger --direct` runs configured actions immediately in the current process and exits.
+- `transcript` sends transcript text to the daemon over localhost HTTP.
+- `transcript --direct` logs transcript text locally and exits.
 - `config check` validates config without running actions.
 - Interactive wake detection uses cooldown state; daemon/manual trigger bypasses wake detection and cooldown.
+- Transcript ingest currently logs/dry-runs text only; opencode routing is Phase 6 scope.
 - Real microphone wake-word detection is intentionally out of scope for V0.

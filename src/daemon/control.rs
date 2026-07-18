@@ -9,7 +9,11 @@ use axum::{
 };
 use serde::Serialize;
 
-use crate::app::{actions::run_actions, config::ActionConfig};
+use crate::app::{
+    actions::run_actions,
+    config::ActionConfig,
+    transcript::{TranscriptEvent, dry_run_transcript},
+};
 
 const CONTROL_ADDR: &str = "127.0.0.1:8765";
 
@@ -20,6 +24,11 @@ struct StatusResponse {
 
 #[derive(Serialize)]
 struct TriggerResponse {
+    status: &'static str,
+}
+
+#[derive(Serialize)]
+struct TranscriptResponse {
     status: &'static str,
 }
 
@@ -98,12 +107,32 @@ pub fn request_trigger() -> Result<()> {
     Ok(())
 }
 
+pub fn request_transcript(transcript: &TranscriptEvent) -> Result<()> {
+    tracing::debug!(addr = CONTROL_ADDR, "sending daemon transcript request");
+
+    let response = reqwest::blocking::Client::new()
+        .post(format!("http://{CONTROL_ADDR}/transcript"))
+        .json(transcript)
+        .send()
+        .with_context(|| format!("failed to connect to daemon at {CONTROL_ADDR}"))?
+        .error_for_status()
+        .context("daemon transcript request failed")?
+        .text()
+        .context("failed to read transcript response from daemon")?;
+
+    tracing::debug!("daemon transcript response received");
+    println!("{}", response.trim());
+
+    Ok(())
+}
+
 async fn serve_control(listener: TcpListener, state: ControlState) -> Result<()> {
     let listener = tokio::net::TcpListener::from_std(listener)
         .context("failed to create async daemon control listener")?;
     let app = Router::new()
         .route("/status", get(status))
         .route("/trigger", post(trigger))
+        .route("/transcript", post(transcript))
         .with_state(state);
 
     tracing::info!(addr = CONTROL_ADDR, "daemon control server listening");
@@ -143,4 +172,24 @@ async fn trigger(
     Ok(Json(TriggerResponse {
         status: "triggered",
     }))
+}
+
+async fn transcript(
+    Json(transcript): Json<TranscriptEvent>,
+) -> Result<Json<TranscriptResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let transcript = TranscriptEvent::new(transcript.text).map_err(|error| {
+        tracing::warn!(%error, "daemon transcript rejected");
+
+        (
+            StatusCode::BAD_REQUEST,
+            Json(ErrorResponse {
+                error: error.to_string(),
+            }),
+        )
+    })?;
+
+    tracing::info!("daemon transcript request received");
+    dry_run_transcript(&transcript);
+
+    Ok(Json(TranscriptResponse { status: "received" }))
 }
