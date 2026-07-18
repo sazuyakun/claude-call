@@ -176,6 +176,18 @@ Exit criteria:
 - The payload can be logged or dry-run routed for debugging.
 - The transcription path is documented with its macOS/Superwhisper assumptions.
 
+Phase 5 commit plan:
+
+| Done | Step | Commit goal                         | What changes                                                                                                               | Verification                                                                                  |
+| ---- | ---- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| [ ]  | 1    | Document transcription path choice  | Research and document the chosen Superwhisper-to-Claude-Call transcription handoff path and assumptions.                    | Review `.plans/v1-phases.md`; no runtime behavior change                                      |
+| [ ]  | 2    | Add transcript domain type          | Add a small `TranscriptEvent` type so text payloads are explicit before routing work begins.                                | `cargo fmt --check`, `cargo check`                                                           |
+| [ ]  | 3    | Add dry-run transcript command      | Add a CLI command that accepts transcript text and logs/dry-runs the payload without needing Superwhisper yet.              | `cargo fmt --check`, `cargo check`, dry-run transcript command                                |
+| [ ]  | 4    | Add local transcript ingest endpoint| Add a localhost-only daemon endpoint for receiving transcript text payloads.                                                | `cargo fmt --check`, `cargo check`, daemon ingest smoke test                                  |
+| [ ]  | 5    | Wire CLI transcript send path       | Add a CLI path that sends transcript text to the running daemon, while keeping direct dry-run available for development.     | `cargo fmt --check`, `cargo check`, daemon transcript send smoke test                         |
+| [ ]  | 6    | Document Superwhisper assumptions   | Update README with the transcript ingest shape, dry-run command, and current Superwhisper/macOS assumptions.                | Read README for accuracy; run non-destructive documented commands                             |
+| [ ]  | 7    | Phase 5 final smoke test            | Run final checks for transcript dry-run, daemon ingest, config check, status, and trigger before completing Phase 5.        | `cargo fmt --check`, `cargo check`, transcript/status/trigger/config check smoke tests        |
+
 ## Phase 6: opencode Session Routing
 
 Goal: send transcriptions to the right AI coding session.
