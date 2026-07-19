@@ -1,9 +1,12 @@
 use std::{path::Path, time::Duration};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use crate::{
-    app::{actions::run_actions, config::Config, transcript::TranscriptEvent},
+    app::{
+        actions::run_actions, config::Config, routing::route_transcript_to_opencode,
+        transcript::TranscriptEvent,
+    },
     cli::{CliCommand, ConfigCommand},
     daemon::control::{request_status, request_transcript, request_trigger, start_control_server},
     wake::{
@@ -26,18 +29,14 @@ pub fn run(config_path: &Path, command: Option<CliCommand>) -> Result<()> {
         return request_trigger();
     }
 
-    if let Some(CliCommand::Transcript { direct, text }) = command.as_ref() {
+    if let Some(CliCommand::Transcript {
+        direct: false,
+        text,
+    }) = command.as_ref()
+    {
         let transcript = TranscriptEvent::new(text.clone())?;
-
-        if *direct {
-            tracing::info!("direct transcript requested");
-            tracing::info!(text = %transcript.text, "transcript received");
-            println!("{}", transcript.text);
-        } else {
-            tracing::info!("daemon transcript requested");
-            request_transcript(&transcript)?;
-        }
-
+        tracing::info!("daemon transcript requested");
+        request_transcript(&transcript)?;
         return Ok(());
     }
 
@@ -61,10 +60,22 @@ pub fn run(config_path: &Path, command: Option<CliCommand>) -> Result<()> {
         return Ok(());
     }
 
+    if let Some(CliCommand::Transcript { direct: true, text }) = command.as_ref() {
+        let transcript = TranscriptEvent::new(text.clone())?;
+        let routing = config
+            .routing
+            .as_ref()
+            .context("config routing.opencode is required for transcript routing")?;
+
+        tracing::info!("direct transcript requested");
+        route_transcript_to_opencode(&transcript, &routing.opencode)?;
+        return Ok(());
+    }
+
     match command.as_ref() {
         Some(CliCommand::Daemon) => {
             tracing::info!("daemon wake listener requested");
-            start_control_server(config.actions.clone())?;
+            start_control_server(config.actions.clone(), config.routing.clone())?;
         }
         Some(CliCommand::Foreground) => tracing::info!("foreground wake listener requested"),
         _ => {}
@@ -85,6 +96,7 @@ fn log_config(config_path: &Path, config: &Config) {
         wake_word = %config.wake_word,
         cooldown_seconds = config.cooldown_seconds,
         actions = config.actions.len(),
+        routing = config.routing.is_some(),
         "loaded config"
     );
 

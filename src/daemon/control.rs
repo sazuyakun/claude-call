@@ -9,7 +9,12 @@ use axum::{
 };
 use serde::Serialize;
 
-use crate::app::{actions::run_actions, config::ActionConfig, transcript::TranscriptEvent};
+use crate::app::{
+    actions::run_actions,
+    config::{ActionConfig, RoutingConfig},
+    routing::route_transcript_to_opencode,
+    transcript::TranscriptEvent,
+};
 
 const CONTROL_ADDR: &str = "127.0.0.1:8765";
 
@@ -36,9 +41,13 @@ struct ErrorResponse {
 #[derive(Clone)]
 struct ControlState {
     actions: Arc<Vec<ActionConfig>>,
+    routing: Option<RoutingConfig>,
 }
 
-pub fn start_control_server(actions: Vec<ActionConfig>) -> Result<()> {
+pub fn start_control_server(
+    actions: Vec<ActionConfig>,
+    routing: Option<RoutingConfig>,
+) -> Result<()> {
     let listener = TcpListener::bind(CONTROL_ADDR)
         .with_context(|| format!("failed to bind daemon control server to {CONTROL_ADDR}"))?;
     listener
@@ -47,6 +56,7 @@ pub fn start_control_server(actions: Vec<ActionConfig>) -> Result<()> {
 
     let state = ControlState {
         actions: Arc::new(actions),
+        routing,
     };
 
     thread::spawn(move || {
@@ -171,6 +181,7 @@ async fn trigger(
 }
 
 async fn transcript(
+    State(state): State<ControlState>,
     Json(transcript): Json<TranscriptEvent>,
 ) -> Result<Json<TranscriptResponse>, (StatusCode, Json<ErrorResponse>)> {
     let transcript = TranscriptEvent::new(transcript.text).map_err(|error| {
@@ -185,8 +196,23 @@ async fn transcript(
     })?;
 
     tracing::info!("daemon transcript request received");
-    tracing::info!(text = %transcript.text, "transcript received");
-    println!("{}", transcript.text);
+    let routing = state.routing.as_ref().ok_or_else(|| {
+        let error = "config routing.opencode is required for transcript routing".to_string();
+        tracing::warn!(error, "daemon transcript routing failed");
 
-    Ok(Json(TranscriptResponse { status: "received" }))
+        (StatusCode::BAD_REQUEST, Json(ErrorResponse { error }))
+    })?;
+
+    route_transcript_to_opencode(&transcript, &routing.opencode).map_err(|error| {
+        tracing::warn!(%error, "daemon transcript routing failed");
+
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
+                error: error.to_string(),
+            }),
+        )
+    })?;
+
+    Ok(Json(TranscriptResponse { status: "routed" }))
 }

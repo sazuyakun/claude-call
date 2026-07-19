@@ -108,7 +108,7 @@ Ask the running daemon to trigger the configured actions:
 cargo run -- trigger
 ```
 
-Send transcript text to the running daemon:
+Route transcript text through the running daemon:
 
 ```bash
 cargo run -- transcript "open the current file and explain the main function"
@@ -117,10 +117,10 @@ cargo run -- transcript "open the current file and explain the main function"
 Expected response:
 
 ```json
-{"status":"received"}
+{"status":"routed"}
 ```
 
-Print transcript text locally without using the daemon:
+Route transcript text directly without using the daemon:
 
 ```bash
 cargo run -- transcript --direct "open the current file and explain the main function"
@@ -177,6 +177,32 @@ args = [
 ]
 ```
 
+Transcript routing is optional, but transcript commands require it. Configure it only when you know which opencode project and session should receive voice text:
+
+```toml
+[routing.opencode]
+project_path = "/Users/you/Coding/apps/example-project"
+session_id = "ses_your_known_opencode_session_id"
+```
+
+Optional routing fields:
+
+```toml
+[routing.opencode]
+project_path = "/Users/you/Coding/apps/example-project"
+session_id = "ses_your_known_opencode_session_id"
+command = "opencode"
+agent = "build"
+```
+
+Claude Call routes by running:
+
+```bash
+opencode run --session <session_id> --dir <project_path> "<transcript>"
+```
+
+If `agent` is configured, `--agent <agent>` is included. If `command` is omitted, Claude Call uses `opencode` from `PATH`.
+
 The action checks whether Superwhisper is already running. If not, it opens the app, waits briefly, then calls Superwhisper's official record deep link.
 
 `cooldown_seconds` controls how soon another wake event can run actions after the last accepted wake event. If `cooldown_seconds = 5`, a second `claude` typed immediately after the first one is ignored. After 5 seconds, another `claude` can run actions again.
@@ -188,6 +214,9 @@ Config is validated at startup. Claude Call currently requires:
 - at least one action
 - non-empty action names
 - non-empty action commands
+- if routing is configured, non-empty `routing.opencode.project_path`
+- if routing is configured, non-empty `routing.opencode.session_id`
+- if routing command or agent overrides are configured, non-empty values
 
 ## Logs
 
@@ -210,6 +239,7 @@ Daemon control logs are emitted by the daemon process. Useful events include:
 - trigger request received
 - trigger completed or failed
 - transcript request received
+- transcript routed to opencode, or rejected with a clear routing error
 
 ## Transcription Flow
 
@@ -224,7 +254,26 @@ Content-Type: application/json
 {"text":"open the current file and explain the main function"}
 ```
 
-Claude Call validates that transcript text is not empty, logs the normalized payload, and prints it. Routing to opencode sessions is intentionally left for Phase 6.
+Claude Call validates that transcript text is not empty, then Phase 6 routes it to the explicitly configured opencode project and session.
+
+## opencode Routing
+
+Phase 6 intentionally avoids guessing the active terminal or current opencode workspace. A transcript can contain private local context, so Claude Call only routes when config names a project path and session id.
+
+Safe behavior:
+
+- no routing config means transcript commands fail with a clear error
+- ambiguous routing is not attempted
+- daemon transcript ingest uses the daemon's loaded config, not the caller's current directory
+- direct transcript routing loads and validates the selected config before sending text
+
+Current route command:
+
+```bash
+opencode run --session <session_id> --dir <project_path> "<transcript>"
+```
+
+Use `opencode session` or the opencode UI to identify the session you want, then copy that known session id into `routing.opencode.session_id`.
 
 Superwhisper assumptions:
 
@@ -274,6 +323,8 @@ Direct transcript test:
 cargo run -- transcript --direct "summarize this project"
 ```
 
+The transcript commands require `[routing.opencode]` in the selected config.
+
 Manual V0 test:
 
 ```text
@@ -296,9 +347,9 @@ Manual V0 test:
 - `status` calls the daemon over localhost HTTP.
 - `trigger` asks the daemon to run configured actions.
 - `trigger --direct` runs configured actions immediately in the current process and exits.
-- `transcript` sends transcript text to the daemon over localhost HTTP.
-- `transcript --direct` logs and prints transcript text locally, then exits.
+- `transcript` sends transcript text to the daemon over localhost HTTP for opencode routing.
+- `transcript --direct` routes transcript text to opencode in the current process, then exits.
 - `config check` validates config without running actions.
 - Interactive wake detection uses cooldown state; daemon/manual trigger bypasses wake detection and cooldown.
-- Transcript ingest currently logs and prints text only; opencode routing is Phase 6 scope.
+- Transcript routing requires an explicit opencode project path and session id; Claude Call does not infer the active workspace.
 - Real microphone wake-word detection is intentionally out of scope for V0.
