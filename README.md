@@ -212,14 +212,14 @@ The action checks whether Superwhisper is already running. If not, it opens the 
 
 `wake_detector.backend` controls where wake events come from. Supported values:
 
-- `stdin`: type the wake word in the terminal. This is the default when `[wake_detector]` is omitted.
+- `stdin`: type the wake word in the terminal.
 - `microphone`: reserved for the Phase 8 Python/audio backend. It is accepted by config but fails clearly at runtime for now.
 
 Config is validated at startup. Claude Call currently requires:
 
 - a non-empty `wake_word`
 - `cooldown_seconds` greater than `0`
-- `wake_detector.backend` must be `stdin` or `microphone` when set
+- `wake_detector.backend` set to `stdin` or `microphone`
 - at least one action
 - non-empty action names
 - non-empty action commands
@@ -297,7 +297,8 @@ Phase 7 introduces an explicit detector backend boundary. The daemon, cooldown p
 
 Current behavior:
 
-- default config uses `stdin`
+- config must explicitly set `[wake_detector]`
+- the checked-in config uses `stdin`
 - typing `claude` still produces the wake event
 - `microphone` is a named backend boundary, not an implemented audio runtime yet
 - real Python/audio integration is Phase 8
@@ -392,7 +393,7 @@ Running `cargo run -- --config path/to/microphone-config.toml foreground` should
 ## Notes
 
 - V0 uses stdin as the fake wake-word detector.
-- `[wake_detector]` defaults to `backend = "stdin"` when omitted.
+- `[wake_detector]` is required; TOML is the source of truth for the detector backend.
 - `backend = "microphone"` is a Phase 7 boundary only; Python/audio runtime comes in Phase 8.
 - V0 uses Superwhisper's `superwhisper://record` deep link to start recording.
 - `daemon` runs the current long-lived wake listener and local control API in the attached terminal.

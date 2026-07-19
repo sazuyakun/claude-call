@@ -6,13 +6,10 @@ use std::{
 use anyhow::{Context, Result, bail};
 use serde::Deserialize;
 
-const DEFAULT_WAKE_DETECTOR_BACKEND: WakeDetectorBackend = WakeDetectorBackend::Stdin;
-
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub wake_word: String,
     pub cooldown_seconds: u64,
-    #[serde(default)]
     pub wake_detector: WakeDetectorConfig,
     pub routing: Option<RoutingConfig>,
     pub actions: Vec<ActionConfig>,
@@ -20,7 +17,6 @@ pub struct Config {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct WakeDetectorConfig {
-    #[serde(default = "default_wake_detector_backend")]
     pub backend: WakeDetectorBackend,
 }
 
@@ -96,24 +92,12 @@ impl Config {
     }
 }
 
-impl Default for WakeDetectorConfig {
-    fn default() -> Self {
-        Self {
-            backend: DEFAULT_WAKE_DETECTOR_BACKEND,
-        }
-    }
-}
-
 impl WakeDetectorConfig {
     fn validate(&self) -> Result<()> {
         match self.backend {
             WakeDetectorBackend::Stdin | WakeDetectorBackend::Microphone => Ok(()),
         }
     }
-}
-
-fn default_wake_detector_backend() -> WakeDetectorBackend {
-    DEFAULT_WAKE_DETECTOR_BACKEND
 }
 
 impl RoutingConfig {
