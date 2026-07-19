@@ -240,7 +240,45 @@ Exit criteria:
 - Stdin/manual trigger remains available for debugging.
 - The daemon/action/policy layers do not need detector-specific changes.
 
-## Phase 8: Final Polish
+## Phase 8: Python Wake Backend Integration
+
+Goal: add the Python wake-word runtime path only after detector boundaries are stable.
+
+Scope:
+
+- Add the smallest Python bridge needed to run a proven wake-word backend locally.
+- Keep Rust as the daemon, config, policy, action, and routing owner.
+- Keep Python behind the wake detector backend boundary.
+- Define how audio frames, wake events, errors, and process lifecycle cross the Rust/Python boundary.
+- Avoid training or model customization in this phase.
+
+Exit criteria:
+
+- A Python-backed wake detector can emit the same wake event shape as stdin/manual detection.
+- The Rust daemon can start, supervise, and stop the Python wake backend cleanly.
+- Stdin/manual detection remains available for debugging and fallback.
+- Python setup and local privacy assumptions are documented.
+
+## Phase 9: Custom Wake Model Training
+
+Goal: train and evaluate the real Claude Call wake model after the Python runtime path is working.
+
+Scope:
+
+- Define the target wake phrase, dataset shape, and local data handling rules.
+- Add a minimal training/evaluation workflow for the chosen wake-word backend.
+- Track false accepts, false rejects, latency, CPU usage, and battery impact.
+- Keep generated datasets, recordings, and model artifacts out of git unless explicitly release-ready.
+- Add config for selecting a trained local model.
+
+Exit criteria:
+
+- A trained local wake model can trigger Claude Call reliably enough for daily testing.
+- Evaluation results are documented with clear caveats.
+- Model files are stored and loaded through an explicit local path.
+- Privacy rules for voice samples and trained artifacts are documented.
+
+## Phase 10: Final Polish
 
 Goal: make V1 feel like a finished local product.
 
@@ -268,6 +306,8 @@ Exit criteria:
 5. Define Superwhisper transcription output.
 6. Add opencode routing.
 7. Add real wake-word detection.
-8. Polish docs, diagnostics, and tests.
+8. Add Python wake backend integration.
+9. Train and evaluate the custom wake model.
+10. Polish docs, diagnostics, and tests.
 
-Do not start with microphone ML. The product becomes easier to finish if the daemon, config, action pipeline, and routing behavior are stable first.
+Do not start with microphone ML. The product becomes easier to finish if the daemon, config, action pipeline, routing behavior, and detector backend boundary are stable first.
