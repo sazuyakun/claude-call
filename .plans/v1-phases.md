@@ -273,6 +273,17 @@ Exit criteria:
 - Stdin/manual detection remains available for debugging and fallback.
 - Python setup and local privacy assumptions are documented.
 
+Phase 8 commit plan:
+
+| Done | Step | Commit goal                  | What changes                                                                                       | Verification                                                              |
+| ---- | ---- | ---------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| [ ]  | 1    | Document Python bridge shape | Decide the Rust/Python process contract for wake events without choosing or training a model.       | Review `.plans/v1-phases.md`; no runtime behavior change                  |
+| [ ]  | 2    | Add Python backend config    | Add required Python command/args config for the microphone backend.                                 | `cargo fmt --check`, `cargo check`, config validation smoke tests         |
+| [ ]  | 3    | Spawn Python wake backend    | Start the configured Python process and read wake events from stdout.                               | `cargo fmt --check`, `cargo check`, Python one-shot wake smoke test       |
+| [ ]  | 4    | Handle lifecycle and errors  | Stop the Python process after wake/error and fail clearly on invalid output or process failure.     | Process failure and invalid output smoke tests                            |
+| [ ]  | 5    | Update docs                  | Document Python backend config, stdout protocol, setup assumptions, and privacy boundary.           | Read README for accuracy; run documented safe commands                    |
+| [ ]  | 6    | Final bridge verification    | Run final checks for stdin fallback, Python wake event, missing config, and process failure.        | `cargo fmt --check`, `cargo check`, stdin/Python/error smoke tests        |
+
 ## Phase 9: Temporary Pre-Existing Wake Model
 
 Goal: prove real microphone wake detection works using a simple pre-existing Python wake-word model before training a custom model.
