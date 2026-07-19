@@ -18,6 +18,13 @@ pub struct Config {
 #[derive(Clone, Debug, Deserialize)]
 pub struct WakeDetectorConfig {
     pub backend: WakeDetectorBackend,
+    pub python: Option<PythonWakeDetectorConfig>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct PythonWakeDetectorConfig {
+    pub command: String,
+    pub args: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize)]
@@ -95,7 +102,20 @@ impl Config {
 impl WakeDetectorConfig {
     fn validate(&self) -> Result<()> {
         match self.backend {
-            WakeDetectorBackend::Stdin | WakeDetectorBackend::Microphone => Ok(()),
+            WakeDetectorBackend::Stdin => Ok(()),
+            WakeDetectorBackend::Microphone => {
+                let python = self.python.as_ref().ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "config wake_detector.python is required when backend is microphone"
+                    )
+                })?;
+
+                if python.command.trim().is_empty() {
+                    bail!("config wake_detector.python.command must not be empty");
+                }
+
+                Ok(())
+            }
         }
     }
 }
