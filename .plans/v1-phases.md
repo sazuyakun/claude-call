@@ -226,6 +226,8 @@ Phase 6 commit plan:
 
 Goal: replace stdin with microphone-based wake detection without rewriting the action pipeline.
 
+Decision: Phase 7 introduces the detector backend boundary and keeps `stdin` as the default working backend. The `microphone` backend is accepted as config but fails clearly at runtime until Phase 8 wires in the Python/audio backend. This keeps policy, actions, daemon control, and transcript routing independent from wake source details.
+
 Scope:
 
 - Add a microphone/audio input backend.
@@ -244,12 +246,12 @@ Phase 7 commit plan:
 
 | Done | Step | Commit goal                    | What changes                                                                                              | Verification                                                                     |
 | ---- | ---- | ------------------------------ | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| [ ]  | 1    | Document detector boundary     | Decide the first detector backend contract and keep microphone/ML behind that boundary.                    | Review `.plans/v1-phases.md`; no runtime behavior change                         |
-| [ ]  | 2    | Add detector config            | Add explicit wake detector config with `stdin` as the default backend.                                     | `cargo fmt --check`, `cargo check`, config validation smoke tests                |
-| [ ]  | 3    | Add detector dispatcher        | Route wake listening through a backend dispatcher without changing policy/actions/routing.                 | `cargo fmt --check`, `cargo check`                                               |
-| [ ]  | 4    | Add microphone backend shell   | Add a mic backend config path that fails clearly until Phase 8 implements Python/audio runtime integration.| `cargo fmt --check`, `cargo check`, mic config failure smoke test                |
-| [ ]  | 5    | Update docs                    | Document detector config, stdin default, and why mic/ML runtime is deferred to Phase 8/9.                  | Read README for accuracy; run documented safe commands                           |
-| [ ]  | 6    | Phase 7 final smoke test       | Run final checks for default config, stdin detection, explicit stdin config, and mic backend safe failure. | `cargo fmt --check`, `cargo check`, config/stdin/mic failure smoke tests         |
+| [x]  | 1    | Document detector boundary     | Decide the first detector backend contract and keep microphone/ML behind that boundary.                    | Review `.plans/v1-phases.md`; no runtime behavior change                         |
+| [x]  | 2    | Add detector config            | Add explicit wake detector config with `stdin` as the default backend.                                     | `cargo fmt --check`, `cargo check`, config validation smoke tests                |
+| [x]  | 3    | Add detector dispatcher        | Route wake listening through a backend dispatcher without changing policy/actions/routing.                 | `cargo fmt --check`, `cargo check`                                               |
+| [x]  | 4    | Add microphone backend shell   | Add a mic backend config path that fails clearly until Phase 8 implements Python/audio runtime integration.| `cargo fmt --check`, `cargo check`, mic config failure smoke test                |
+| [x]  | 5    | Update docs                    | Document detector config, stdin default, and why mic/ML runtime is deferred to Phase 8/9.                  | Read README for accuracy; run documented safe commands                           |
+| [x]  | 6    | Phase 7 final smoke test       | Run final checks for default config, stdin detection, explicit stdin config, and mic backend safe failure. | `cargo fmt --check`, `cargo check`, config/stdin/mic failure smoke tests         |
 
 ## Phase 8: Python Wake Backend Integration
 

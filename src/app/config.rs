@@ -6,12 +6,29 @@ use std::{
 use anyhow::{Context, Result, bail};
 use serde::Deserialize;
 
+const DEFAULT_WAKE_DETECTOR_BACKEND: WakeDetectorBackend = WakeDetectorBackend::Stdin;
+
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub wake_word: String,
     pub cooldown_seconds: u64,
+    #[serde(default)]
+    pub wake_detector: WakeDetectorConfig,
     pub routing: Option<RoutingConfig>,
     pub actions: Vec<ActionConfig>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct WakeDetectorConfig {
+    #[serde(default = "default_wake_detector_backend")]
+    pub backend: WakeDetectorBackend,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum WakeDetectorBackend {
+    Stdin,
+    Microphone,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -53,6 +70,8 @@ impl Config {
             bail!("config cooldown_seconds must be greater than 0");
         }
 
+        self.wake_detector.validate()?;
+
         if self.actions.is_empty() {
             bail!("config must define at least one action");
         }
@@ -75,6 +94,26 @@ impl Config {
 
         Ok(())
     }
+}
+
+impl Default for WakeDetectorConfig {
+    fn default() -> Self {
+        Self {
+            backend: DEFAULT_WAKE_DETECTOR_BACKEND,
+        }
+    }
+}
+
+impl WakeDetectorConfig {
+    fn validate(&self) -> Result<()> {
+        match self.backend {
+            WakeDetectorBackend::Stdin | WakeDetectorBackend::Microphone => Ok(()),
+        }
+    }
+}
+
+fn default_wake_detector_backend() -> WakeDetectorBackend {
+    DEFAULT_WAKE_DETECTOR_BACKEND
 }
 
 impl RoutingConfig {

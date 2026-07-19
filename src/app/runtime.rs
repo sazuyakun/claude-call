@@ -10,7 +10,7 @@ use crate::{
     cli::{CliCommand, ConfigCommand},
     daemon::control::{request_status, request_transcript, request_trigger, start_control_server},
     wake::{
-        detector::wait_for_wake_word,
+        detector::wait_for_wake_event,
         policy::{WakeDecision, WakePolicy},
     },
 };
@@ -95,6 +95,7 @@ fn log_config(config_path: &Path, config: &Config) {
         config_path = %config_path.display(),
         wake_word = %config.wake_word,
         cooldown_seconds = config.cooldown_seconds,
+        wake_detector = ?config.wake_detector.backend,
         actions = config.actions.len(),
         routing = config.routing.is_some(),
         "loaded config"
@@ -115,7 +116,7 @@ fn run_interactive(config: Config) -> Result<()> {
 
     loop {
         tracing::info!("listening for wake word");
-        let wake_event = wait_for_wake_word(&config.wake_word)?;
+        let wake_event = wait_for_wake_event(&config.wake_detector, &config.wake_word)?;
         tracing::debug!(wake_word = %wake_event.wake_word, "wake event received");
 
         match wake_policy.decide(&wake_event) {

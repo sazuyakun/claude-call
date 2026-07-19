@@ -2,9 +2,20 @@ use std::io::{self, Write};
 
 use anyhow::{Context, Result, bail};
 
+use crate::app::config::{WakeDetectorBackend, WakeDetectorConfig};
+
 use super::event::WakeEvent;
 
-pub fn wait_for_wake_word(wake_word: &str) -> Result<WakeEvent> {
+pub fn wait_for_wake_event(config: &WakeDetectorConfig, wake_word: &str) -> Result<WakeEvent> {
+    match config.backend {
+        WakeDetectorBackend::Stdin => wait_for_stdin_wake_word(wake_word),
+        WakeDetectorBackend::Microphone => {
+            bail!("microphone wake detector backend is planned for Phase 8")
+        }
+    }
+}
+
+fn wait_for_stdin_wake_word(wake_word: &str) -> Result<WakeEvent> {
     let normalized_wake_word = normalize_input(wake_word);
 
     loop {
