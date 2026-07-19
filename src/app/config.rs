@@ -1,4 +1,7 @@
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use anyhow::{Context, Result, bail};
 use serde::Deserialize;
@@ -7,7 +10,21 @@ use serde::Deserialize;
 pub struct Config {
     pub wake_word: String,
     pub cooldown_seconds: u64,
+    pub routing: Option<RoutingConfig>,
     pub actions: Vec<ActionConfig>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct RoutingConfig {
+    pub opencode: OpencodeRoutingConfig,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct OpencodeRoutingConfig {
+    pub project_path: PathBuf,
+    pub session_id: String,
+    pub command: Option<String>,
+    pub agent: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -52,6 +69,42 @@ impl Config {
             }
         }
 
+        if let Some(routing) = &self.routing {
+            routing.validate()?;
+        }
+
         Ok(())
+    }
+}
+
+impl RoutingConfig {
+    fn validate(&self) -> Result<()> {
+        if self.opencode.project_path.as_os_str().is_empty() {
+            bail!("config routing.opencode.project_path must not be empty");
+        }
+
+        if self.opencode.session_id.trim().is_empty() {
+            bail!("config routing.opencode.session_id must not be empty");
+        }
+
+        if let Some(command) = &self.opencode.command {
+            if command.trim().is_empty() {
+                bail!("config routing.opencode.command must not be empty when set");
+            }
+        }
+
+        if let Some(agent) = &self.opencode.agent {
+            if agent.trim().is_empty() {
+                bail!("config routing.opencode.agent must not be empty when set");
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl OpencodeRoutingConfig {
+    pub fn command(&self) -> &str {
+        self.command.as_deref().unwrap_or("opencode")
     }
 }
