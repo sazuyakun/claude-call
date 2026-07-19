@@ -3,11 +3,7 @@ use std::{path::Path, time::Duration};
 use anyhow::Result;
 
 use crate::{
-    app::{
-        actions::run_actions,
-        config::Config,
-        transcript::{TranscriptEvent, dry_run_transcript},
-    },
+    app::{actions::run_actions, config::Config, transcript::TranscriptEvent},
     cli::{CliCommand, ConfigCommand},
     daemon::control::{request_status, request_transcript, request_trigger, start_control_server},
     wake::{
@@ -35,7 +31,8 @@ pub fn run(config_path: &Path, command: Option<CliCommand>) -> Result<()> {
 
         if *direct {
             tracing::info!("direct transcript requested");
-            dry_run_transcript(&transcript);
+            tracing::info!(text = %transcript.text, "transcript received");
+            println!("{}", transcript.text);
         } else {
             tracing::info!("daemon transcript requested");
             request_transcript(&transcript)?;

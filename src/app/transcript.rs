@@ -13,8 +13,3 @@ impl TranscriptEvent {
         Ok(Self { text })
     }
 }
-
-pub fn dry_run_transcript(event: &TranscriptEvent) {
-    tracing::info!(text = %event.text, "transcript dry run received");
-    println!("{}", event.text);
-}

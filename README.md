@@ -120,7 +120,7 @@ Expected response:
 {"status":"received"}
 ```
 
-Dry-run transcript text locally without using the daemon:
+Print transcript text locally without using the daemon:
 
 ```bash
 cargo run -- transcript --direct "open the current file and explain the main function"
@@ -213,7 +213,7 @@ Daemon control logs are emitted by the daemon process. Useful events include:
 
 ## Transcription Flow
 
-Phase 5 treats a completed transcription as a local text payload entering Claude Call. Superwhisper is still responsible for recording and transcription; Claude Call receives the finished text through either a CLI dry-run command or the daemon's localhost-only control API.
+Phase 5 treats a completed transcription as a local text payload entering Claude Call. Superwhisper is still responsible for recording and transcription; Claude Call receives the finished text through either a direct CLI command or the daemon's localhost-only control API.
 
 Current local ingest shape:
 
@@ -224,7 +224,7 @@ Content-Type: application/json
 {"text":"open the current file and explain the main function"}
 ```
 
-Claude Call validates that transcript text is not empty, logs the normalized payload, and prints it in dry-run mode. Routing to opencode sessions is intentionally left for Phase 6.
+Claude Call validates that transcript text is not empty, logs the normalized payload, and prints it. Routing to opencode sessions is intentionally left for Phase 6.
 
 Superwhisper assumptions:
 
@@ -268,7 +268,7 @@ cargo run -- trigger
 cargo run -- transcript "summarize this project"
 ```
 
-Transcript dry-run test:
+Direct transcript test:
 
 ```bash
 cargo run -- transcript --direct "summarize this project"
@@ -297,8 +297,8 @@ Manual V0 test:
 - `trigger` asks the daemon to run configured actions.
 - `trigger --direct` runs configured actions immediately in the current process and exits.
 - `transcript` sends transcript text to the daemon over localhost HTTP.
-- `transcript --direct` logs transcript text locally and exits.
+- `transcript --direct` logs and prints transcript text locally, then exits.
 - `config check` validates config without running actions.
 - Interactive wake detection uses cooldown state; daemon/manual trigger bypasses wake detection and cooldown.
-- Transcript ingest currently logs/dry-runs text only; opencode routing is Phase 6 scope.
+- Transcript ingest currently logs and prints text only; opencode routing is Phase 6 scope.
 - Real microphone wake-word detection is intentionally out of scope for V0.

@@ -9,11 +9,7 @@ use axum::{
 };
 use serde::Serialize;
 
-use crate::app::{
-    actions::run_actions,
-    config::ActionConfig,
-    transcript::{TranscriptEvent, dry_run_transcript},
-};
+use crate::app::{actions::run_actions, config::ActionConfig, transcript::TranscriptEvent};
 
 const CONTROL_ADDR: &str = "127.0.0.1:8765";
 
@@ -189,7 +185,8 @@ async fn transcript(
     })?;
 
     tracing::info!("daemon transcript request received");
-    dry_run_transcript(&transcript);
+    tracing::info!(text = %transcript.text, "transcript received");
+    println!("{}", transcript.text);
 
     Ok(Json(TranscriptResponse { status: "received" }))
 }
