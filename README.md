@@ -158,6 +158,9 @@ Current config:
 wake_word = "claude"
 cooldown_seconds = 5
 
+[wake_detector]
+backend = "stdin"
+
 [[actions]]
 name = "start-superwhisper-recording"
 command = "osascript"
@@ -207,10 +210,16 @@ The action checks whether Superwhisper is already running. If not, it opens the 
 
 `cooldown_seconds` controls how soon another wake event can run actions after the last accepted wake event. If `cooldown_seconds = 5`, a second `claude` typed immediately after the first one is ignored. After 5 seconds, another `claude` can run actions again.
 
+`wake_detector.backend` controls where wake events come from. Supported values:
+
+- `stdin`: type the wake word in the terminal.
+- `microphone`: reserved for the Phase 8 Python/audio backend. It is accepted by config but fails clearly at runtime for now.
+
 Config is validated at startup. Claude Call currently requires:
 
 - a non-empty `wake_word`
 - `cooldown_seconds` greater than `0`
+- `wake_detector.backend` set to `stdin` or `microphone`
 - at least one action
 - non-empty action names
 - non-empty action commands
@@ -282,6 +291,39 @@ Superwhisper assumptions:
 - if no official completion hook is available, a small local bridge can call `POST /transcript`
 - simulated keystrokes are intentionally avoided for transcript handoff
 
+## Wake Detection
+
+Phase 7 introduces an explicit detector backend boundary. The daemon, cooldown policy, actions, and transcript routing all consume the same `WakeEvent` regardless of where it came from.
+
+Current behavior:
+
+- config must explicitly set `[wake_detector]`
+- the checked-in config uses `stdin`
+- typing `claude` still produces the wake event
+- `microphone` is a named backend boundary, not an implemented audio runtime yet
+- real Python/audio integration is Phase 8
+- custom wake model training is Phase 9
+
+Example explicit stdin config:
+
+```toml
+[wake_detector]
+backend = "stdin"
+```
+
+Example future microphone config:
+
+```toml
+[wake_detector]
+backend = "microphone"
+```
+
+With `microphone` today, the app exits with:
+
+```text
+microphone wake detector backend is planned for Phase 8
+```
+
 ## Verify
 
 Run the checks:
@@ -339,9 +381,20 @@ Manual V0 test:
 9. Confirm it starts recording again without restarting the app.
 ```
 
+Microphone backend boundary test:
+
+```toml
+[wake_detector]
+backend = "microphone"
+```
+
+Running `cargo run -- --config path/to/microphone-config.toml foreground` should fail clearly because microphone wake detection is intentionally deferred to Phase 8.
+
 ## Notes
 
 - V0 uses stdin as the fake wake-word detector.
+- `[wake_detector]` is required; TOML is the source of truth for the detector backend.
+- `backend = "microphone"` is a Phase 7 boundary only; Python/audio runtime comes in Phase 8.
 - V0 uses Superwhisper's `superwhisper://record` deep link to start recording.
 - `daemon` runs the current long-lived wake listener and local control API in the attached terminal.
 - `status` calls the daemon over localhost HTTP.

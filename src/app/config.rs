@@ -10,8 +10,21 @@ use serde::Deserialize;
 pub struct Config {
     pub wake_word: String,
     pub cooldown_seconds: u64,
+    pub wake_detector: WakeDetectorConfig,
     pub routing: Option<RoutingConfig>,
     pub actions: Vec<ActionConfig>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct WakeDetectorConfig {
+    pub backend: WakeDetectorBackend,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum WakeDetectorBackend {
+    Stdin,
+    Microphone,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -53,6 +66,8 @@ impl Config {
             bail!("config cooldown_seconds must be greater than 0");
         }
 
+        self.wake_detector.validate()?;
+
         if self.actions.is_empty() {
             bail!("config must define at least one action");
         }
@@ -74,6 +89,14 @@ impl Config {
         }
 
         Ok(())
+    }
+}
+
+impl WakeDetectorConfig {
+    fn validate(&self) -> Result<()> {
+        match self.backend {
+            WakeDetectorBackend::Stdin | WakeDetectorBackend::Microphone => Ok(()),
+        }
     }
 }
 

@@ -1,6 +1,9 @@
 wake_word = "claude"
 cooldown_seconds = 5
 
+[wake_detector]
+backend = "stdin"
+
 [[actions]]
 name = "start-superwhisper-recording"
 command = "osascript"
