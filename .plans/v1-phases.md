@@ -257,7 +257,7 @@ Phase 7 commit plan:
 
 Goal: add the Python wake-word runtime path only after detector boundaries are stable.
 
-Decision: the Python wake backend uses a small stdout protocol. Rust starts the configured process from `[wake_detector.python]`; the process emits a line containing `wake`; Rust stops the process and turns that line into the existing `WakeEvent`. Model choice, microphone implementation details, and training remain outside this phase.
+Decision: the Python wake backend uses the same wake-event pipeline as stdin. TOML chooses `backend = "microphone"`; Rust starts Claude Call's Python backend implementation; the process emits a line containing `wake`; Rust stops the process and turns that line into the existing `WakeEvent`. Model choice, microphone implementation details, and training remain outside this phase.
 
 Scope:
 
@@ -280,11 +280,11 @@ Phase 8 commit plan:
 | Done | Step | Commit goal                  | What changes                                                                                       | Verification                                                              |
 | ---- | ---- | ---------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | [x]  | 1    | Document Python bridge shape | Decide the Rust/Python process contract for wake events without choosing or training a model.       | Review `.plans/v1-phases.md`; no runtime behavior change                  |
-| [x]  | 2    | Add Python backend config    | Add required Python command/args config for the microphone backend.                                 | `cargo fmt --check`, `cargo check`, config validation smoke tests         |
-| [x]  | 3    | Spawn Python wake backend    | Start the configured Python process and read wake events from stdout.                               | `cargo fmt --check`, `cargo check`, Python one-shot wake smoke test       |
+| [x]  | 2    | Add Python backend config    | Let TOML select the microphone backend while keeping the Python implementation internal to the app.  | `cargo fmt --check`, `cargo check`, config validation smoke tests         |
+| [x]  | 3    | Spawn Python wake backend    | Start Claude Call's Python backend process and read wake events from stdout.                        | `cargo fmt --check`, `cargo check`, Python one-shot wake smoke test       |
 | [x]  | 4    | Handle lifecycle and errors  | Stop the Python process after wake/error and fail clearly on invalid output or process failure.     | Process failure and invalid output smoke tests                            |
 | [x]  | 5    | Update docs                  | Document Python backend config, stdout protocol, setup assumptions, and privacy boundary.           | Read README for accuracy; run documented safe commands                    |
-| [x]  | 6    | Final bridge verification    | Run final checks for stdin fallback, Python wake event, missing config, and process failure.        | `cargo fmt --check`, `cargo check`, stdin/Python/error smoke tests        |
+| [x]  | 6    | Final bridge verification    | Run final checks for stdin fallback, Python wake event, invalid event, and no-model failure.        | `cargo fmt --check`, `cargo check`, stdin/Python/error smoke tests        |
 
 ## Phase 9: Temporary Pre-Existing Wake Model
 
