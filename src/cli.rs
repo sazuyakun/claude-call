@@ -30,6 +30,13 @@ pub enum CliCommand {
         #[arg(long)]
         direct: bool,
     },
+    /// Send transcript text to the daemon, or use --direct to log it locally.
+    Transcript {
+        #[arg(long)]
+        direct: bool,
+
+        text: String,
+    },
 }
 
 #[derive(Debug, Subcommand)]

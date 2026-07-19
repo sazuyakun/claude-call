@@ -3,9 +3,9 @@ use std::{path::Path, time::Duration};
 use anyhow::Result;
 
 use crate::{
-    app::{actions::run_actions, config::Config},
+    app::{actions::run_actions, config::Config, transcript::TranscriptEvent},
     cli::{CliCommand, ConfigCommand},
-    daemon::control::{request_status, request_trigger, start_control_server},
+    daemon::control::{request_status, request_transcript, request_trigger, start_control_server},
     wake::{
         detector::wait_for_wake_word,
         policy::{WakeDecision, WakePolicy},
@@ -24,6 +24,21 @@ pub fn run(config_path: &Path, command: Option<CliCommand>) -> Result<()> {
     ) {
         tracing::info!("daemon trigger requested");
         return request_trigger();
+    }
+
+    if let Some(CliCommand::Transcript { direct, text }) = command.as_ref() {
+        let transcript = TranscriptEvent::new(text.clone())?;
+
+        if *direct {
+            tracing::info!("direct transcript requested");
+            tracing::info!(text = %transcript.text, "transcript received");
+            println!("{}", transcript.text);
+        } else {
+            tracing::info!("daemon transcript requested");
+            request_transcript(&transcript)?;
+        }
+
+        return Ok(());
     }
 
     let config = load_config(config_path)?;

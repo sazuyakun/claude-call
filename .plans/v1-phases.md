@@ -162,6 +162,8 @@ Exit criteria:
 
 Goal: move beyond only starting recording and define how transcription leaves Superwhisper.
 
+Decision: Phase 5 treats a completed transcription as local text input to Claude Call rather than coupling routing to Superwhisper UI automation. Claude Call exposes a localhost-only transcript ingest path and a direct CLI path so the text payload can be observed, logged, and later routed to agents. Superwhisper remains responsible for recording/transcription; the handoff should use an official app mechanism such as a post-transcription command/webhook/deep-link integration if available on the user's installed Superwhisper version. If no official completion hook is available, a small local bridge may call the Claude Call ingest endpoint, but simulated keystrokes remain out of scope.
+
 Scope:
 
 - Decide how Claude Call receives or retrieves the final transcription.
@@ -173,8 +175,20 @@ Scope:
 Exit criteria:
 
 - A completed voice capture can become a text payload inside Claude Call.
-- The payload can be logged or dry-run routed for debugging.
+- The payload can be logged or inspected before routing.
 - The transcription path is documented with its macOS/Superwhisper assumptions.
+
+Phase 5 commit plan:
+
+| Done | Step | Commit goal                         | What changes                                                                                                               | Verification                                                                                  |
+| ---- | ---- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| [x]  | 1    | Document transcription path choice  | Research and document the chosen Superwhisper-to-Claude-Call transcription handoff path and assumptions.                    | Review `.plans/v1-phases.md`; no runtime behavior change                                      |
+| [x]  | 2    | Add transcript domain type          | Add a small `TranscriptEvent` type so text payloads are explicit before routing work begins.                                | `cargo fmt --check`, `cargo check`                                                           |
+| [x]  | 3    | Add direct transcript command       | Add a CLI command that accepts transcript text and logs the payload without needing Superwhisper yet.                       | `cargo fmt --check`, `cargo check`, direct transcript command                                 |
+| [x]  | 4    | Add local transcript ingest endpoint| Add a localhost-only daemon endpoint for receiving transcript text payloads.                                                | `cargo fmt --check`, `cargo check`, daemon ingest smoke test                                  |
+| [x]  | 5    | Wire CLI transcript send path       | Add a CLI path that sends transcript text to the running daemon, while keeping direct local handling available.              | `cargo fmt --check`, `cargo check`, daemon transcript send smoke test                         |
+| [x]  | 6    | Document Superwhisper assumptions   | Update README with the transcript ingest shape, direct command, and current Superwhisper/macOS assumptions.                 | Read README for accuracy; run non-destructive documented commands                             |
+| [x]  | 7    | Phase 5 final smoke test            | Run final checks for direct transcript, daemon ingest, config check, status, and trigger before completing Phase 5.         | `cargo fmt --check`, `cargo check`, transcript/status/trigger/config check smoke tests        |
 
 ## Phase 6: opencode Session Routing
 
@@ -186,7 +200,7 @@ Scope:
 - Route to an existing session when possible.
 - Create or select a session when none is active, only after the expected behavior is clear.
 - Preserve project context and avoid sending text to the wrong workspace.
-- Add dry-run routing output for debugging.
+- Add routing output for debugging before sending text onward.
 
 Exit criteria:
 
