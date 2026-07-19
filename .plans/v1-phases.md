@@ -259,22 +259,43 @@ Goal: add the Python wake-word runtime path only after detector boundaries are s
 
 Scope:
 
-- Add the smallest Python bridge needed to run a proven wake-word backend locally.
+- Add the smallest Python bridge needed to run a local wake-word backend from the Rust daemon.
 - Keep Rust as the daemon, config, policy, action, and routing owner.
 - Keep Python behind the wake detector backend boundary.
 - Define how audio frames, wake events, errors, and process lifecycle cross the Rust/Python boundary.
-- Avoid training or model customization in this phase.
+- Keep stdin/manual detection available while the Python backend is introduced.
+- Avoid model selection, training, or customization in this phase.
 
 Exit criteria:
 
-- A Python-backed wake detector can emit the same wake event shape as stdin/manual detection.
+- A Python-backed detector process can emit the same wake event shape as stdin/manual detection.
 - The Rust daemon can start, supervise, and stop the Python wake backend cleanly.
 - Stdin/manual detection remains available for debugging and fallback.
 - Python setup and local privacy assumptions are documented.
 
-## Phase 9: Custom Wake Model Training
+## Phase 9: Temporary Pre-Existing Wake Model
 
-Goal: train and evaluate the real Claude Call wake model after the Python runtime path is working.
+Goal: prove real microphone wake detection works using a simple pre-existing Python wake-word model before training a custom model.
+
+Scope:
+
+- Pick a small off-the-shelf wake-word detector/model that can run locally on macOS.
+- Prefer a built-in wake phrase or packaged demo model over custom training.
+- Wire the selected model through the Phase 8 Python backend.
+- Treat this model as temporary validation, not the final Claude Call wake model.
+- Measure basic usability: detection latency, false accepts, false rejects, CPU usage, and obvious setup friction.
+- Avoid training or model customization in this phase.
+
+Exit criteria:
+
+- Saying the temporary wake phrase can trigger the existing cooldown/action pipeline.
+- The Python backend can emit real microphone wake events using the pre-existing model.
+- The temporary model choice, wake phrase limitations, setup steps, and local privacy assumptions are documented.
+- The result is good enough to decide whether the chosen Python backend is worth using for custom training.
+
+## Phase 10: Custom Wake Model Training
+
+Goal: train and evaluate the real Claude Call wake model after a pre-existing model proves the microphone wake path works.
 
 Scope:
 
@@ -291,7 +312,7 @@ Exit criteria:
 - Model files are stored and loaded through an explicit local path.
 - Privacy rules for voice samples and trained artifacts are documented.
 
-## Phase 10: Final Polish
+## Phase 11: Final Polish
 
 Goal: make V1 feel like a finished local product.
 
@@ -320,7 +341,8 @@ Exit criteria:
 6. Add opencode routing.
 7. Add real wake-word detection.
 8. Add Python wake backend integration.
-9. Train and evaluate the custom wake model.
-10. Polish docs, diagnostics, and tests.
+9. Validate with a temporary pre-existing wake model.
+10. Train and evaluate the custom wake model.
+11. Polish docs, diagnostics, and tests.
 
 Do not start with microphone ML. The product becomes easier to finish if the daemon, config, action pipeline, routing behavior, and detector backend boundary are stable first.
