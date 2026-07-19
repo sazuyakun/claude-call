@@ -208,6 +208,18 @@ Exit criteria:
 - Routing decisions are explainable in logs.
 - Ambiguous routing fails safely instead of guessing silently.
 
+Phase 6 commit plan:
+
+| Done | Step | Commit goal                    | What changes                                                                                                       | Verification                                                                           |
+| ---- | ---- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| [ ]  | 1    | Document routing decision      | Decide the first routing contract and document how Claude Call avoids sending text to the wrong workspace.          | Review `.plans/v1-phases.md`; no runtime behavior change                               |
+| [ ]  | 2    | Add routing config             | Add explicit opencode routing config with validation so routing has a known project/session target.                 | `cargo fmt --check`, `cargo check`, config validation smoke tests                      |
+| [ ]  | 3    | Add route domain type          | Add a small routing decision/result type so transcript routing logs stay explainable.                               | `cargo fmt --check`, `cargo check`                                                    |
+| [ ]  | 4    | Route transcript locally       | Replace transcript log-only handling with local routing output for direct transcript commands.                      | `cargo fmt --check`, `cargo check`, direct transcript smoke test                       |
+| [ ]  | 5    | Route daemon transcripts       | Make daemon transcript ingest use the same routing logic and fail safely when config is ambiguous or incomplete.    | `cargo fmt --check`, `cargo check`, daemon transcript smoke test                       |
+| [ ]  | 6    | Document opencode assumptions  | Update README with routing config, safe failure behavior, and current opencode handoff assumptions.                 | Read README for accuracy; run non-destructive documented commands                      |
+| [ ]  | 7    | Phase 6 final smoke test       | Run final checks for config validation, direct routing, daemon routing, status, and trigger.                        | `cargo fmt --check`, `cargo check`, config/status/trigger/transcript smoke tests       |
+
 ## Phase 7: Real Wake-Word Detection
 
 Goal: replace stdin with microphone-based wake detection without rewriting the action pipeline.
