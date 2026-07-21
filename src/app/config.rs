@@ -18,6 +18,13 @@ pub struct Config {
 #[derive(Clone, Debug, Deserialize)]
 pub struct WakeDetectorConfig {
     pub backend: WakeDetectorBackend,
+    pub microphone: Option<MicrophoneWakeDetectorConfig>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct MicrophoneWakeDetectorConfig {
+    pub model: String,
+    pub threshold: f32,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize)]
@@ -95,7 +102,24 @@ impl Config {
 impl WakeDetectorConfig {
     fn validate(&self) -> Result<()> {
         match self.backend {
-            WakeDetectorBackend::Stdin | WakeDetectorBackend::Microphone => Ok(()),
+            WakeDetectorBackend::Stdin => Ok(()),
+            WakeDetectorBackend::Microphone => {
+                let microphone = self.microphone.as_ref().ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "config wake_detector.microphone is required when backend is microphone"
+                    )
+                })?;
+
+                if microphone.model.trim().is_empty() {
+                    bail!("config wake_detector.microphone.model must not be empty");
+                }
+
+                if !(0.0..=1.0).contains(&microphone.threshold) {
+                    bail!("config wake_detector.microphone.threshold must be between 0 and 1");
+                }
+
+                Ok(())
+            }
         }
     }
 }

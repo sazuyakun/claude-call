@@ -213,13 +213,36 @@ The action checks whether Superwhisper is already running. If not, it opens the 
 `wake_detector.backend` controls where wake events come from. Supported values:
 
 - `stdin`: type the wake word in the terminal.
-- `microphone`: reserved for the Phase 8 Python/audio backend. It is accepted by config but fails clearly at runtime for now.
+- `microphone`: run Claude Call's Python wake backend and wait for it to emit a wake event.
+
+Python wake backend config:
+
+```toml
+[wake_detector]
+backend = "microphone"
+
+[wake_detector.microphone]
+model = "hey jarvis"
+threshold = 0.5
+```
+
+The Python backend lives in `python/wake_backend.py` and uses `openwakeword` with microphone audio from `sounddevice`. Its process contract is intentionally small: write a line containing `wake` to stdout when the wake phrase is detected. Claude Call turns that line into the same internal `WakeEvent` used by stdin.
+
+Install Python wake dependencies:
+
+```bash
+python3 -m pip install -r python/requirements.txt
+```
+
+The recommended temporary validation model is `hey jarvis`. Say "hey jarvis" when testing `backend = "microphone"`. Custom Claude Call wake-word training remains Phase 10 scope.
 
 Config is validated at startup. Claude Call currently requires:
 
 - a non-empty `wake_word`
 - `cooldown_seconds` greater than `0`
 - `wake_detector.backend` set to `stdin` or `microphone`
+- if `wake_detector.backend = "microphone"`, non-empty `wake_detector.microphone.model`
+- if `wake_detector.backend = "microphone"`, `wake_detector.microphone.threshold` between `0` and `1`
 - at least one action
 - non-empty action names
 - non-empty action commands
@@ -293,16 +316,16 @@ Superwhisper assumptions:
 
 ## Wake Detection
 
-Phase 7 introduces an explicit detector backend boundary. The daemon, cooldown policy, actions, and transcript routing all consume the same `WakeEvent` regardless of where it came from.
+Claude Call has an explicit detector backend boundary. The daemon, cooldown policy, actions, and transcript routing all consume the same `WakeEvent` regardless of where it came from.
 
 Current behavior:
 
 - config must explicitly set `[wake_detector]`
 - the checked-in config uses `stdin`
 - typing `claude` still produces the wake event
-- `microphone` is a named backend boundary, not an implemented audio runtime yet
-- real Python/audio integration is Phase 8
-- custom wake model training is Phase 9
+- `microphone` starts Claude Call's Python backend and listens through `openwakeword`
+- the temporary validation model is an existing openWakeWord model, recommended as `hey jarvis`
+- custom wake model training is Phase 10
 
 Example explicit stdin config:
 
@@ -311,17 +334,21 @@ Example explicit stdin config:
 backend = "stdin"
 ```
 
-Example future microphone config:
+Example Python-backed microphone config:
 
 ```toml
 [wake_detector]
 backend = "microphone"
+
+[wake_detector.microphone]
+model = "hey jarvis"
+threshold = 0.5
 ```
 
-With `microphone` today, the app exits with:
+The backend process emits this exact line when it detects a wake phrase:
 
 ```text
-microphone wake detector backend is planned for Phase 8
+wake
 ```
 
 ## Verify
@@ -381,20 +408,39 @@ Manual V0 test:
 9. Confirm it starts recording again without restarting the app.
 ```
 
-Microphone backend boundary test:
+Python wake backend bridge test:
 
 ```toml
 [wake_detector]
 backend = "microphone"
+
+[wake_detector.microphone]
+model = "hey jarvis"
+threshold = 0.5
 ```
 
-Running `cargo run -- --config path/to/microphone-config.toml foreground` should fail clearly because microphone wake detection is intentionally deferred to Phase 8.
+Running `CLAUDE_CALL_WAKE_EVENT=wake cargo run -- --config path/to/python-config.toml foreground` should receive one wake event from Python and run the configured actions.
+
+Real microphone wake test:
+
+```bash
+python3 -m pip install -r python/requirements.txt
+cargo run -- --config path/to/python-config.toml foreground
+```
+
+Say:
+
+```text
+hey jarvis
+```
+
+Expected result: Claude Call receives a wake event, applies cooldown, and runs the configured actions. Audio stays local to the Python process.
 
 ## Notes
 
 - V0 uses stdin as the fake wake-word detector.
 - `[wake_detector]` is required; TOML is the source of truth for the detector backend.
-- `backend = "microphone"` is a Phase 7 boundary only; Python/audio runtime comes in Phase 8.
+- `backend = "microphone"` runs Claude Call's Python wake backend process with a configured existing openWakeWord model.
 - V0 uses Superwhisper's `superwhisper://record` deep link to start recording.
 - `daemon` runs the current long-lived wake listener and local control API in the attached terminal.
 - `status` calls the daemon over localhost HTTP.
