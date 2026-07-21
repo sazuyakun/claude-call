@@ -257,7 +257,7 @@ Phase 7 commit plan:
 
 Goal: add the Python wake-word runtime path only after detector boundaries are stable.
 
-Decision: the Python wake backend uses the same wake-event pipeline as stdin. TOML chooses `backend = "microphone"`; Rust starts Claude Call's Python backend implementation; the process emits a line containing `wake`; Rust stops the process and turns that line into the existing `WakeEvent`. Model choice, microphone implementation details, and training remain outside this phase.
+Decision: the Python wake backend uses the same wake-event pipeline as stdin. TOML chooses `backend = "microphone"` and names an existing openWakeWord model plus threshold; Rust starts Claude Call's Python backend implementation; the process emits a line containing `wake`; Rust stops the process and turns that line into the existing `WakeEvent`. Custom model training remains outside this phase.
 
 Scope:
 
@@ -266,7 +266,8 @@ Scope:
 - Keep Python behind the wake detector backend boundary.
 - Define how audio frames, wake events, errors, and process lifecycle cross the Rust/Python boundary.
 - Keep stdin/manual detection available while the Python backend is introduced.
-- Avoid model selection, training, or customization in this phase.
+- Use an existing openWakeWord model for microphone validation.
+- Avoid training or customization in this phase.
 
 Exit criteria:
 
@@ -280,7 +281,7 @@ Phase 8 commit plan:
 | Done | Step | Commit goal                  | What changes                                                                                       | Verification                                                              |
 | ---- | ---- | ---------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | [x]  | 1    | Document Python bridge shape | Decide the Rust/Python process contract for wake events without choosing or training a model.       | Review `.plans/v1-phases.md`; no runtime behavior change                  |
-| [x]  | 2    | Add Python backend config    | Let TOML select the microphone backend while keeping the Python implementation internal to the app.  | `cargo fmt --check`, `cargo check`, config validation smoke tests         |
+| [x]  | 2    | Add Python backend config    | Let TOML select the microphone backend and existing openWakeWord model.                              | `cargo fmt --check`, `cargo check`, config validation smoke tests         |
 | [x]  | 3    | Spawn Python wake backend    | Start Claude Call's Python backend process and read wake events from stdout.                        | `cargo fmt --check`, `cargo check`, Python one-shot wake smoke test       |
 | [x]  | 4    | Handle lifecycle and errors  | Stop the Python process after wake/error and fail clearly on invalid output or process failure.     | Process failure and invalid output smoke tests                            |
 | [x]  | 5    | Update docs                  | Document Python backend config, stdout protocol, setup assumptions, and privacy boundary.           | Read README for accuracy; run documented safe commands                    |
@@ -305,6 +306,18 @@ Exit criteria:
 - The Python backend can emit real microphone wake events using the pre-existing model.
 - The temporary model choice, wake phrase limitations, setup steps, and local privacy assumptions are documented.
 - The result is good enough to decide whether the chosen Python backend is worth using for custom training.
+
+Status: completed by wiring the microphone backend to an explicit existing openWakeWord model (`hey jarvis` is recommended for validation) and keeping custom training in Phase 10.
+
+Phase 9 result:
+
+| Done | Step | Result |
+| ---- | ---- | ------ |
+| [x]  | Existing model choice | Use `openwakeword` with the pre-existing `hey jarvis` model for temporary validation. |
+| [x]  | Local microphone path | Python backend captures 16 kHz mono microphone audio through `sounddevice`. |
+| [x]  | Wake event handoff | Detection emits the same `wake` stdout protocol consumed by Rust. |
+| [x]  | Setup docs | README documents Python requirements, model config, and the real microphone test. |
+| [x]  | Automated smoke | Forced wake event verifies Rust -> Python -> `WakeEvent` -> action pipeline without requiring microphone hardware. |
 
 ## Phase 10: Custom Wake Model Training
 

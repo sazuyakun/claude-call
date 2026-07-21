@@ -6,26 +6,35 @@ use std::{
 
 use anyhow::{Context, Result, bail};
 
-use crate::app::config::{WakeDetectorBackend, WakeDetectorConfig};
+use crate::app::config::{MicrophoneWakeDetectorConfig, WakeDetectorBackend, WakeDetectorConfig};
 
 use super::event::WakeEvent;
 
 pub fn wait_for_wake_event(config: &WakeDetectorConfig, wake_word: &str) -> Result<WakeEvent> {
     match config.backend {
         WakeDetectorBackend::Stdin => wait_for_stdin_wake_word(wake_word),
-        WakeDetectorBackend::Microphone => wait_for_python_wake_event(wake_word),
+        WakeDetectorBackend::Microphone => wait_for_python_wake_event(config, wake_word),
     }
 }
 
-fn wait_for_python_wake_event(wake_word: &str) -> Result<WakeEvent> {
-    wait_for_python_stdout_wake_event(wake_word)
+fn wait_for_python_wake_event(config: &WakeDetectorConfig, wake_word: &str) -> Result<WakeEvent> {
+    let microphone = config.microphone.as_ref().context(
+        "config wake_detector.microphone is required when wake_detector.backend is microphone",
+    )?;
+
+    wait_for_python_stdout_wake_event(microphone, wake_word)
 }
 
-fn wait_for_python_stdout_wake_event(wake_word: &str) -> Result<WakeEvent> {
+fn wait_for_python_stdout_wake_event(
+    microphone: &MicrophoneWakeDetectorConfig,
+    wake_word: &str,
+) -> Result<WakeEvent> {
     let backend_path = python_wake_backend_path();
 
     tracing::info!(
         backend_path = %backend_path.display(),
+        model = %microphone.model,
+        threshold = microphone.threshold,
         "starting python wake detector"
     );
 
@@ -33,6 +42,10 @@ fn wait_for_python_stdout_wake_event(wake_word: &str) -> Result<WakeEvent> {
         .arg(&backend_path)
         .arg("--wake-word")
         .arg(wake_word)
+        .arg("--model")
+        .arg(&microphone.model)
+        .arg("--threshold")
+        .arg(microphone.threshold.to_string())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
         .spawn()

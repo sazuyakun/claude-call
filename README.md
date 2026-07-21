@@ -220,15 +220,29 @@ Python wake backend config:
 ```toml
 [wake_detector]
 backend = "microphone"
+
+[wake_detector.microphone]
+model = "hey jarvis"
+threshold = 0.5
 ```
 
-The Python backend lives in `python/wake_backend.py`. Its process contract is intentionally small: write a line containing `wake` to stdout when the wake phrase is detected. Claude Call turns that line into the same internal `WakeEvent` used by stdin. Model choice and real wake-word accuracy are handled later by the temporary pre-existing model phase and custom training phase.
+The Python backend lives in `python/wake_backend.py` and uses `openwakeword` with microphone audio from `sounddevice`. Its process contract is intentionally small: write a line containing `wake` to stdout when the wake phrase is detected. Claude Call turns that line into the same internal `WakeEvent` used by stdin.
+
+Install Python wake dependencies:
+
+```bash
+python3 -m pip install -r python/requirements.txt
+```
+
+The recommended temporary validation model is `hey jarvis`. Say "hey jarvis" when testing `backend = "microphone"`. Custom Claude Call wake-word training remains Phase 10 scope.
 
 Config is validated at startup. Claude Call currently requires:
 
 - a non-empty `wake_word`
 - `cooldown_seconds` greater than `0`
 - `wake_detector.backend` set to `stdin` or `microphone`
+- if `wake_detector.backend = "microphone"`, non-empty `wake_detector.microphone.model`
+- if `wake_detector.backend = "microphone"`, `wake_detector.microphone.threshold` between `0` and `1`
 - at least one action
 - non-empty action names
 - non-empty action commands
@@ -309,8 +323,8 @@ Current behavior:
 - config must explicitly set `[wake_detector]`
 - the checked-in config uses `stdin`
 - typing `claude` still produces the wake event
-- `microphone` starts Claude Call's Python backend and reads wake events from stdout
-- temporary pre-existing wake model validation is Phase 9
+- `microphone` starts Claude Call's Python backend and listens through `openwakeword`
+- the temporary validation model is an existing openWakeWord model, recommended as `hey jarvis`
 - custom wake model training is Phase 10
 
 Example explicit stdin config:
@@ -325,9 +339,13 @@ Example Python-backed microphone config:
 ```toml
 [wake_detector]
 backend = "microphone"
+
+[wake_detector.microphone]
+model = "hey jarvis"
+threshold = 0.5
 ```
 
-The backend process must print this exact line when it detects a wake phrase:
+The backend process emits this exact line when it detects a wake phrase:
 
 ```text
 wake
@@ -395,15 +413,34 @@ Python wake backend bridge test:
 ```toml
 [wake_detector]
 backend = "microphone"
+
+[wake_detector.microphone]
+model = "hey jarvis"
+threshold = 0.5
 ```
 
 Running `CLAUDE_CALL_WAKE_EVENT=wake cargo run -- --config path/to/python-config.toml foreground` should receive one wake event from Python and run the configured actions.
+
+Real microphone wake test:
+
+```bash
+python3 -m pip install -r python/requirements.txt
+cargo run -- --config path/to/python-config.toml foreground
+```
+
+Say:
+
+```text
+hey jarvis
+```
+
+Expected result: Claude Call receives a wake event, applies cooldown, and runs the configured actions. Audio stays local to the Python process.
 
 ## Notes
 
 - V0 uses stdin as the fake wake-word detector.
 - `[wake_detector]` is required; TOML is the source of truth for the detector backend.
-- `backend = "microphone"` runs Claude Call's Python wake backend process.
+- `backend = "microphone"` runs Claude Call's Python wake backend process with a configured existing openWakeWord model.
 - V0 uses Superwhisper's `superwhisper://record` deep link to start recording.
 - `daemon` runs the current long-lived wake listener and local control API in the attached terminal.
 - `status` calls the daemon over localhost HTTP.
